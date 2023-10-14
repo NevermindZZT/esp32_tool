@@ -6,7 +6,8 @@ idf_component_register(
 
     INCLUDE_DIRS "./"
                  "../shell"
-                 "../shell/src"
+                 "../shell/letter-shell"
+                 "../shell/letter-shell/src"
 
     REQUIRES
         bt

@@ -12,7 +12,8 @@ idf_component_register(
     SRCS "misc.c"
     INCLUDE_DIRS "./"
                  "../shell"
-                 "../shell/src"
+                 "../shell/letter-shell"
+                 "../shell/letter-shell/src"
     REQUIRES "spi_flash"
              "esp_hw_support"
 )

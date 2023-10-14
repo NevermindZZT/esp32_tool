@@ -1,15 +1,15 @@
 idf_component_register(
-    SRCS "src/shell.c"
-         "src/shell_ext.c"
+    SRCS "letter-shell/src/shell.c"
+         "letter-shell/src/shell_ext.c"
          "shell_port.c"
 
     INCLUDE_DIRS "./"
-                 "./src"
+                 "./letter-shell/src"
 
     REQUIRES
         driver
 
-    LDFRAGMENTS "shell.lf"
+    LDFRAGMENTS "letter-shell/demo/esp-idf/shell.lf"
 )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -DSHELL_CFG_USER="shell_cfg_user.h")

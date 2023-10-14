@@ -1,0 +1,3 @@
+[submodule "components/shell/letter-shell"]
+	path = components/shell/letter-shell
+	url = https://github.com/NevermindZZT/letter-shell
