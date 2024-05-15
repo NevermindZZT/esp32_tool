@@ -15,3 +15,13 @@ idf_component_register(
 )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-unused-const-variable)
+
+
+target_link_libraries(
+    ${COMPONENT_LIB}
+    
+    INTERFACE
+        "-u rtAppsetting"
+        "-u shellCommandhid_device"
+        "-u shellCommandhid_send"
+)

@@ -17,3 +17,12 @@ idf_component_register(
     REQUIRES "spi_flash"
              "esp_hw_support"
 )
+
+target_link_libraries(
+    ${COMPONENT_LIB}
+    
+    INTERFACE
+        "-u rtAppsetting"
+        "-u shellCommandsysInfo"
+        "-u shellCommandps"
+)

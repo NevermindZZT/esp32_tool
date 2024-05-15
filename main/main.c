@@ -14,8 +14,6 @@
 #include "shell_port.h"
 #include "esp_task_wdt.h"
 
-extern void exportKeep(void);
-
 static void start_task(void *param)
 {
     rtamInit();
@@ -26,7 +24,5 @@ void app_main()
 {
     ESP_ERROR_CHECK(nvs_flash_init());
 
-    // userShellInit();
-    exportKeep();
     xTaskCreate(start_task, "start", 4096, NULL, 1, NULL);
 }

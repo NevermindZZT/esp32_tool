@@ -17,3 +17,10 @@ idf_component_register(
         gui
 )
 
+target_link_libraries(
+    ${COMPONENT_LIB} 
+
+    INTERFACE 
+        "-u rtApplauncher"
+        "-u shellCommandhome"
+)

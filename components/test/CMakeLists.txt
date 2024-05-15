@@ -21,3 +21,4 @@ idf_component_register(
         launcher
 )
 
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u rtApptest")

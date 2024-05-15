@@ -31,3 +31,4 @@ idf_component_register(
 )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -DPROJECT_VER="${PROJECT_VER}")
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u rtAppsetting")

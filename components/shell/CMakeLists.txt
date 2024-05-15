@@ -16,3 +16,4 @@ idf_component_register(
 )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -DSHELL_CFG_USER="shell_cfg_user.h")
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u rtAppshell")

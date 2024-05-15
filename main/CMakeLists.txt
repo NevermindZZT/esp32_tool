@@ -1,6 +1,5 @@
 idf_component_register(
     SRCS "main.c"
-         "export_keep.c"
 
     INCLUDE_DIRS "./"
                  "../components"
