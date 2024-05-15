@@ -5,6 +5,9 @@ idf_component_register(
 
     INCLUDE_DIRS "./"
                  "./letter-shell/src"
+                 "../"
+                 "../rtam"
+                 "../rtam/rtam/src"
 
     REQUIRES
         driver

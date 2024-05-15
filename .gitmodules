@@ -1,3 +1,12 @@
 [submodule "components/shell/letter-shell"]
 	path = components/shell/letter-shell
 	url = https://github.com/NevermindZZT/letter-shell
+[submodule "components/lvgl_esp32_drivers"]
+	path = components/lvgl_esp32_drivers
+	url = https://github.com/NevermindZZT/lvgl_esp32_drivers.git
+[submodule "components/lvgl"]
+	path = components/lvgl
+	url = https://github.com/lvgl/lvgl.git
+[submodule "components/rtam/rtam"]
+	path = components/rtam/rtam
+	url = https://github.com/NevermindZZT/rtam.git

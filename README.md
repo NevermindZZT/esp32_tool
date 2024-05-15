@@ -2,7 +2,7 @@
 
 ESP32 工具
 
-## 编译
+## 拉取
 
 ```sh
 git clone https://github.com/NevermindZZT/esp32_tool

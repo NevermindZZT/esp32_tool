@@ -17,4 +17,5 @@
 extern Shell shell;
 
 void userShellInit(void);
+unsigned int shellKeep(void);
 #endif

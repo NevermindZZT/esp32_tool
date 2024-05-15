@@ -1,0 +1,13 @@
+[sections:rtApp]
+entries:
+    rtApp+
+
+[scheme:rt_app]
+entries:
+    rtApp -> flash_rodata
+
+[mapping:rtam]
+archive: *
+entries:
+    * (rt_app);
+        rtApp -> flash_rodata KEEP() ALIGN(4, pre, post) SURROUND(rt_app)

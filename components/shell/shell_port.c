@@ -12,13 +12,10 @@
 #include "shell.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/uart.h"
+#include "rtam.h"
 
 
 #define     SHELL_UART      UART_NUM_0
-
-static void shellKeep(void);
-
-unsigned int keep = 0;
 
 Shell shell;
 char shellBuffer[512];
@@ -29,9 +26,9 @@ char shellBuffer[512];
  * @param data 数据
  * @param len 数据长度
  * 
- * @return unsigned short 写入实际长度
+ * @return signed short 写入实际长度
  */
-unsigned short userShellWrite(char *data, unsigned short len)
+signed short userShellWrite(char *data, unsigned short len)
 {
     return uart_write_bytes(SHELL_UART, (const char *)data, len);
 }
@@ -43,9 +40,9 @@ unsigned short userShellWrite(char *data, unsigned short len)
  * @param data 数据
  * @param len 数据长度
  * 
- * @return unsigned short 读取实际长度
+ * @return signed short 读取实际长度
  */
-signed char userShellRead(char *data, unsigned short len)
+signed short userShellRead(char *data, unsigned short len)
 {
     return uart_read_bytes(SHELL_UART, (uint8_t *)data, len, portMAX_DELAY);
 }
@@ -55,7 +52,7 @@ signed char userShellRead(char *data, unsigned short len)
  * @brief 用户shell初始化
  * 
  */
-void userShellInit(void)
+int userShellInit(void)
 {
     uart_config_t uartConfig = {
         .baud_rate = 115200,
@@ -72,10 +69,9 @@ void userShellInit(void)
 
     xTaskCreate(shellTask, "shell", 8192, &shell, 10, NULL);
 
-    if (keep) {
-        shellKeep();
-    }
+    return 0;
 }
+RTAPP_EXPORT(shell, userShellInit, NULL, NULL, RTAPP_FLAGS_AUTO_START|RATPP_FLAGS_SERVICE, NULL, NULL);
 
 static void test(void)
 {
@@ -85,22 +81,6 @@ SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(1)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC),
 test, test, test);
 
 SHELL_EXPORT_USER(SHELL_CMD_PERMISSION(1), root, root, root);
-
-
-#define SHELL_CMD_USED(_name) \
-        extern ShellCommand shellCommand##_name; \
-        keep += (int) &shellCommand##_name
-
-static void shellKeep(void)
-{
-    SHELL_CMD_USED(sysInfo);
-    SHELL_CMD_USED(ps);
-    SHELL_CMD_USED(hid_device);
-    SHELL_CMD_USED(hid_send);
-    // SHELL_CMD_USED(smartConfig);
-    // SHELL_CMD_USED(wlanScan);
-    // SHELL_CMD_USED(wlanConnect);
-}
 
 #if SHELL_USING_FUNC_SIGNATURE == 1
 void shellFuncSignatureTest(int a, char *b, char c)
