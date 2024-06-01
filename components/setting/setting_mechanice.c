@@ -32,6 +32,7 @@ lv_obj_t *setting_create_mechanice(void)
 
     lv_obj_t *menu = lv_menu_create(screen);
     lv_obj_set_size(menu, lv_display_get_horizontal_resolution(NULL), lv_display_get_vertical_resolution(NULL));
+    lv_obj_set_style_bg_color(menu, lv_color_hex(0x000000), LV_PART_MAIN);
     lv_obj_center(menu);
     lv_obj_add_flag(menu, LV_OBJ_FLAG_EVENT_BUBBLE);
     
@@ -39,6 +40,7 @@ lv_obj_t *setting_create_mechanice(void)
     lv_obj_t *main_page = lv_menu_page_create(menu, "Mechanice");
 
     section = lv_menu_section_create(main_page);
+    lv_obj_set_style_bg_color(section, lv_color_hex(0x000000), LV_PART_MAIN);
     setting_create_slider(section, &icon_app_setting_brightness, "Brightness", 
                           1, 100, 100, brightness_slider_event_cb);
 

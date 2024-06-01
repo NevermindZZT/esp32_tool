@@ -9,15 +9,6 @@ idf_component_register(
          "icon_app_setting_brightness.c"
 
     INCLUDE_DIRS "./"
-                 "../shell"
-                 "../shell/letter-shell"
-                 "../shell/letter-shell/src"
-                 "../lvgl"
-                 "../lvgl_esp32_drivers"
-                 "../launcher"
-                 "../gui"
-                 "../rtam"
-                 "../rtam/rtam/src"
 
     REQUIRES
         driver

@@ -6,7 +6,6 @@ idf_component_register(
                  "../shell"
                  "../shell/letter-shell"
                  "../shell/letter-shell/src"
-                 "../lvgl"
 
     REQUIRES
         driver

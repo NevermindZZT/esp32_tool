@@ -13,4 +13,5 @@ idf_component_register(
         launcher
         setting
         test
+        usb_device
 )

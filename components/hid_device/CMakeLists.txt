@@ -21,7 +21,6 @@ target_link_libraries(
     ${COMPONENT_LIB}
     
     INTERFACE
-        "-u rtAppsetting"
         "-u shellCommandhid_device"
         "-u shellCommandhid_send"
 )

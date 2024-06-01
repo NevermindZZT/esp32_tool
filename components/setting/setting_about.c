@@ -23,6 +23,7 @@ lv_obj_t *setting_create_about(void)
 
     lv_obj_t *menu = lv_menu_create(screen);
     lv_obj_set_size(menu, lv_display_get_horizontal_resolution(NULL), lv_display_get_vertical_resolution(NULL));
+    lv_obj_set_style_bg_color(menu, lv_color_hex(0x000000), LV_PART_MAIN);
     lv_obj_center(menu);
     lv_obj_add_flag(menu, LV_OBJ_FLAG_EVENT_BUBBLE);
 

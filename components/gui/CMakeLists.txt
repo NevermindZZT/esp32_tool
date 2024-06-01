@@ -3,18 +3,13 @@ idf_component_register(
          "gui_common.c"
 
     INCLUDE_DIRS "./"
-                 "../shell"
-                 "../shell/letter-shell"
-                 "../shell/letter-shell/src"
-                 "../lvgl"
-                 "../lvgl_esp32_drivers"
-                 "../rtam"
-                 "../rtam/rtam/src"
 
     REQUIRES
         driver
         lvgl
         lvgl_esp32_drivers
+        rtam
+        shell
 )
 
 target_compile_options(${COMPONENT_LIB}
