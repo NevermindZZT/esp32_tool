@@ -18,7 +18,7 @@
 #include "freertos/task.h"
 #include "shell.h"
 
-const char *TAG = "misc";
+static const char *TAG = "misc";
 
 #define STATS_TICKS         pdMS_TO_TICKS(1000)
 #define ARRAY_SIZE_OFFSET   5   //Increase this if print_real_time_stats returns ESP_ERR_INVALID_SIZE

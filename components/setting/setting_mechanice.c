@@ -12,6 +12,7 @@
 #include "lvgl.h"
 #include "lvgl_helpers.h"
 #include "setting.h"
+#include "gui.h"
 
 static const char *TAG = "setting_mechanice";
 
@@ -41,7 +42,7 @@ lv_obj_t *setting_create_mechanice(void)
 
     section = lv_menu_section_create(main_page);
     lv_obj_set_style_bg_color(section, lv_color_hex(0x000000), LV_PART_MAIN);
-    setting_create_slider(section, &icon_app_setting_brightness, "Brightness", 
+    setting_create_slider(section, (void *)GUI_APP_RES_PNG(setting, brightness), "Brightness", 
                           1, 100, 100, brightness_slider_event_cb);
 
     lv_menu_set_page(menu, main_page);

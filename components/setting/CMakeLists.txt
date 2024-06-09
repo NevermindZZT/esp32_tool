@@ -19,6 +19,7 @@ idf_component_register(
         lvgl_esp32_drivers
         launcher
         gui
+        battery
 )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -DPROJECT_VER="${PROJECT_VER}")

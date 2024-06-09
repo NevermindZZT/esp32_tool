@@ -12,10 +12,17 @@ idf_component_register(
         esp_tinyusb
         rtam
         vfs
+        storage
 )
 
 # target_compile_options(${COMPONENT_LIB}
 #                         PRIVATE
 #                         -Wno-unused-const-variable
 #                         -DRTAM_CFG_USER="rtam_cfg_user.h")
-target_link_libraries(${COMPONENT_LIB} INTERFACE "-u rtAppusb_device")
+target_link_libraries(
+    ${COMPONENT_LIB}
+    
+    INTERFACE
+        "-u rtAppusb_device"
+        "-u shellCommandswtich_log"
+)

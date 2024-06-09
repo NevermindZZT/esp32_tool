@@ -12,6 +12,7 @@
 #include "freertos/FreeRTOS.h"
 #include "lvgl.h"
 #include "setting.h"
+#include "battery.h"
 
 lv_obj_t *setting_create_about(void)
 {
@@ -63,6 +64,10 @@ lv_obj_t *setting_create_about(void)
     cont = lv_menu_cont_create(main_page);
     label = lv_label_create(cont);
     lv_label_set_text_fmt(label, "IDF: %d.%d.%d", ESP_IDF_VERSION_MAJOR, ESP_IDF_VERSION_MINOR, ESP_IDF_VERSION_PATCH);
+
+    cont = lv_menu_cont_create(main_page);
+    label = lv_label_create(cont);
+    lv_label_set_text_fmt(label, "Battery: %dmV", battery_get_voltage());
 
     lv_menu_set_page(menu, main_page);
 

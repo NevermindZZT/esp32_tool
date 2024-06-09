@@ -122,6 +122,8 @@ static void gui_task(void *param)
     lv_log_register_print_cb(lv_log_cb);
 #endif
 
+    gui_fs_init();
+
     lv_display_t *display = lv_display_create(LV_HOR_RES_MAX, LV_VER_RES_MAX);
     lv_display_set_flush_cb(display, disp_driver_flush);
     lv_display_flush_ready(display);
@@ -165,4 +167,10 @@ static int gui_get_status(void)
 {
     return rt_app_status;
 }
-RTAPP_EXPORT(gui, gui_init, NULL, gui_get_status, RTAPP_FLAGS_AUTO_START|RATPP_FLAGS_SERVICE, NULL, NULL);
+
+static const char *required[] = {
+    "storage",
+    NULL
+};
+
+RTAPP_EXPORT(gui, gui_init, NULL, gui_get_status, RTAPP_FLAGS_AUTO_START|RATPP_FLAGS_SERVICE, required, NULL);

@@ -23,6 +23,7 @@
 #include "freertos/FreeRTOS.h"
 #include "rtam.h"
 #include "shell.h"
+#include "storage.h"
 
 #define USB_DEVICE_USER_TINYUSB
 
@@ -159,9 +160,29 @@ int usb_device_init(void)
     };
     ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
 
-    // ESP_ERROR_CHECK(esp_tusb_init_console(TINYUSB_CDC_ACM_0));
 #endif
     cdc_shell_init();
+
+    tinyusb_msc_spiflash_config_t config_spi = {
+        .wl_handle = storage_get_internal_handle(),
+    };
+    tinyusb_msc_storage_init_spiflash(&config_spi);
     return 0;
 }
-RTAPP_EXPORT(usb_device, usb_device_init, NULL, NULL, RTAPP_FLAGS_AUTO_START|RATPP_FLAGS_SERVICE, NULL, NULL);
+
+static const char *required[] = {
+    "storage",
+    NULL
+};
+RTAPP_EXPORT(usb_device, usb_device_init, NULL, NULL, RTAPP_FLAGS_AUTO_START|RATPP_FLAGS_SERVICE, required, NULL);
+
+void usb_switch_log(char cdc)
+{
+    if (cdc) {
+        ESP_ERROR_CHECK(esp_tusb_init_console(TINYUSB_CDC_ACM_0));
+    } else {
+        ESP_ERROR_CHECK(esp_tusb_deinit_console(TINYUSB_CDC_ACM_0));
+    }
+}
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC),
+swtich_log, usb_switch_log, switch log to usb or uart);

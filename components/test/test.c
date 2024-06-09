@@ -37,6 +37,7 @@
 #include "widgets/menu/lv_menu.h"
 #include <stdint.h>
 #include "launcher.h"
+#include "gui.h"
 
 
 static void slider_event_cb(lv_event_t * e);
@@ -164,10 +165,10 @@ static const char *required[] = {
     NULL
 };
 
-extern const lv_image_dsc_t icon_app_setting;
+extern const lv_image_dsc_t icon_app_test;
 
 static RtamInfo test_info = {
-    .icon = (void *) &icon_app_setting
+    .icon = (void *) GUI_APP_ICON(test),
 };
 
 RTAPP_EXPORT(test, test_init, test_stop, test_get_status, 0, required, &test_info);

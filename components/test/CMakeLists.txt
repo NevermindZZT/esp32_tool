@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "test.c"
+    SRCS "icon_app_test.c" "test.c"
 
     INCLUDE_DIRS "./"
                  "../shell"

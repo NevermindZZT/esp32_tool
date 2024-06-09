@@ -14,4 +14,6 @@ idf_component_register(
         setting
         test
         usb_device
+        battery
+        storage
 )

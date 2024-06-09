@@ -94,11 +94,11 @@ static void setting_init_screen(void)
     lv_obj_t *main_page = lv_menu_page_create(menu, "Setting");
 
     lv_obj_t *mechanice = gui_create_menu_item(main_page, lv_obj_get_style_bg_color(menu, 0),
-                                               (void *)&icon_app_setting_mechanice, "Mechanice");
+                                               (void *)GUI_APP_RES_PNG(setting, mechanice), "Mechanice");
     lv_obj_add_event_cb(mechanice, setting_item_event_cb, LV_EVENT_CLICKED, (void *)SETTING_MECHANICE);
 
     lv_obj_t *about = gui_create_menu_item(main_page, lv_obj_get_style_bg_color(menu, 0),
-                                           (void *)&icon_app_setting_about, "About");
+                                           (void *)GUI_APP_RES_PNG(setting, about), "About");
     lv_obj_add_event_cb(about, setting_item_event_cb, LV_EVENT_CLICKED, (void *)SETTING_ABOUT);
 
     lv_menu_set_page(menu, main_page);
@@ -139,7 +139,7 @@ static const char *required[] = {
 };
 
 static RtamInfo setting_info = {
-    .icon = (void *) &icon_app_setting
+    .icon = (void *) GUI_APP_ICON(setting),
 };
 
 RTAPP_EXPORT(setting, setting_init, setting_stop, setting_get_status, 0, required, &setting_info);
