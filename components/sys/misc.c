@@ -80,6 +80,10 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait)
     UBaseType_t start_array_size, end_array_size;
     uint32_t start_run_time, end_run_time;
     esp_err_t ret;
+    Shell *shell = shellGetCurrent();
+    if (shell == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
 
     if (xTicksToWait == 0) {
         xTicksToWait = STATS_TICKS;
@@ -122,7 +126,8 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait)
         goto exit;
     }
 
-    printf("| Task | Run Time | Percentage\n");
+    shellPrint(shell, "%-12s %-8s %s\n", "Task", "Run Time", "Percentage");
+    shellPrint(shell, "%-12s %-8s %s\n", "----", "------", "----");
     //Match each task in start_array to those in the end_array
     for (int i = 0; i < start_array_size; i++) {
         int k = -1;
@@ -139,19 +144,19 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait)
         if (k >= 0) {
             uint32_t task_elapsed_time = end_array[k].ulRunTimeCounter - start_array[i].ulRunTimeCounter;
             uint32_t percentage_time = (task_elapsed_time * 100UL) / (total_elapsed_time * portNUM_PROCESSORS);
-            printf("| %s | %"PRIu32" | %"PRIu32"%%\n", start_array[i].pcTaskName, task_elapsed_time, percentage_time);
+            shellPrint(shell, "%-12s %-8"PRIu32" %"PRIu32"%%\n", start_array[i].pcTaskName, task_elapsed_time, percentage_time);
         }
     }
 
     //Print unmatched tasks
     for (int i = 0; i < start_array_size; i++) {
         if (start_array[i].xHandle != NULL) {
-            printf("| %s | Deleted\n", start_array[i].pcTaskName);
+            shellPrint(shell, "%s Deleted\n", start_array[i].pcTaskName);
         }
     }
     for (int i = 0; i < end_array_size; i++) {
         if (end_array[i].xHandle != NULL) {
-            printf("| %s | Created\n", end_array[i].pcTaskName);
+            shellPrint(shell, "%s Created\n", end_array[i].pcTaskName);
         }
     }
     ret = ESP_OK;

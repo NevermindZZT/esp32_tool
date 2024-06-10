@@ -13,6 +13,7 @@ idf_component_register(
         rtam
         shell
         storage
+        key
 )
 
 target_compile_options(${COMPONENT_LIB}

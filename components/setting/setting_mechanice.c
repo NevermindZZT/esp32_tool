@@ -20,7 +20,7 @@ static void brightness_slider_event_cb(lv_event_t *event)
 {
     lv_obj_t *slider = lv_event_get_target(event);
     int32_t val = lv_slider_get_value(slider);
-    lval_set_backlight(val);
+    lvgl_set_backlight(val);
 }
 
 lv_obj_t *setting_create_mechanice(void)

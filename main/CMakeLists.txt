@@ -16,4 +16,5 @@ idf_component_register(
         usb_device
         battery
         storage
+        key
 )

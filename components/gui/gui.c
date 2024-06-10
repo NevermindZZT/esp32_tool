@@ -8,6 +8,7 @@
  */
 #include "display/lv_display.h"
 #include "draw/lv_draw_buf.h"
+#include "esp_lcd_backlight.h"
 #include "esp_log.h"
 #include "freertos/projdefs.h"
 #include "indev/lv_indev.h"
@@ -27,6 +28,7 @@
 #include "shell.h"
 #include <stdint.h>
 #include "gui.h"
+#include "key.h"
 
 static const char *TAG = "gui";
 
@@ -35,6 +37,25 @@ static SemaphoreHandle_t xGuiSemaphore;
 static lv_obj_t *scr_stack[GUI_MAX_SCREEN_STACK];
 
 static int rt_app_status = RTAPP_STATUS_STOPPED;
+
+static bool display_on = true;
+
+static void power_key_press_callback(int key, enum key_action action)
+{
+    if (action == KEY_ACTION_SHORT_PRESS) {
+        if (display_on) {
+            disp_set_on(0);
+            lvgl_set_backlight(0);
+            display_on = false;
+            gui_lock();
+        } else {
+            disp_set_on(1);
+            lvgl_set_backlight(100);
+            display_on = true;
+            gui_unlock();
+        }
+    }
+}
 
 #if defined(CONFIG_LV_USE_LOG)
 static void lv_log_cb(lv_log_level_t level, const char *buf)
@@ -143,6 +164,8 @@ static void gui_task(void *param)
 	esp_timer_handle_t periodic_timer;
 	ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
 	ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 10 * 1000));
+
+    key_register_callback("power", power_key_press_callback);
 
     while (1) {
         /* Try to take the semaphore, call lvgl related function on success */
