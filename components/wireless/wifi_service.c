@@ -1,44 +1,40 @@
-/* Esptouch example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
-
+/**
+ * @file wifi_service.c
+ * @author Letter (NevermindZZT@gmail.com)
+ * @brief wifi service
+ * @version 1.0.0
+ * @date 2024-06-11
+ * @copyright (c) 2024 Letter All rights reserved.
+ */
 #include <string.h>
 #include <stdlib.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/event_groups.h"
 #include "esp_wifi.h"
 #include "esp_eap_client.h"
 #include "esp_event.h"
-#include "esp_log.h"
 #include "esp_system.h"
-#include "nvs_flash.h"
+#include "esp_idf_version.h"
+#include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_smartconfig.h"
 #include "esp_mac.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "shell.h"
+#include "rtam.h"
+ 
+static const char *TAG = "wifi_service";
 
-/* FreeRTOS event group to signal when we are connected & ready to make a request */
+static int rt_app_status = RTAPP_STATUS_STOPPED;
+
 static EventGroupHandle_t s_wifi_event_group;
-
-/* The event group allows multiple bits for each event,
-   but we only care about one event - are we connected
-   to the AP with an IP? */
 static const int CONNECTED_BIT = BIT0;
 static const int ESPTOUCH_DONE_BIT = BIT1;
-static const char *TAG = "smartconfig_example";
-
-static void smartconfig_example_task(void * parm);
 
 static void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-        xTaskCreate(smartconfig_example_task, "smartconfig_example_task", 4096, NULL, 3, NULL);
+        // TODO
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         esp_wifi_connect();
         xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
@@ -90,8 +86,9 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
-static void initialise_wifi(void)
+static int wifi_service_init(void)
 {
+    rt_app_status = RTAPP_STATUS_STARING;
     ESP_ERROR_CHECK(esp_netif_init());
     s_wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -107,29 +104,28 @@ static void initialise_wifi(void)
 
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK( esp_wifi_start() );
-}
 
-static void smartconfig_example_task(void * parm)
-{
-    EventBits_t uxBits;
-    ESP_ERROR_CHECK( esp_smartconfig_set_type(SC_TYPE_ESPTOUCH) );
-    smartconfig_start_config_t cfg = SMARTCONFIG_START_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK( esp_smartconfig_start(&cfg) );
-    while (1) {
-        uxBits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT | ESPTOUCH_DONE_BIT, true, false, portMAX_DELAY);
-        if(uxBits & CONNECTED_BIT) {
-            ESP_LOGI(TAG, "WiFi Connected to ap");
-        }
-        if(uxBits & ESPTOUCH_DONE_BIT) {
-            ESP_LOGI(TAG, "smartconfig over");
-            esp_smartconfig_stop();
-            vTaskDelete(NULL);
-        }
-    }
-}
-
-int smartconfig_init(void)
-{
-    initialise_wifi();
+    rt_app_status = RTAPP_STATUS_RUNNING;
     return 0;
 }
+
+static int wifi_service_stop(void)
+{
+    rt_app_status = RTAPP_STATUS_STOPPING;
+    ESP_ERROR_CHECK( esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler) );
+    ESP_ERROR_CHECK( esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler) );
+    ESP_ERROR_CHECK( esp_event_handler_unregister(SC_EVENT, ESP_EVENT_ANY_ID, &event_handler) );
+    ESP_ERROR_CHECK( esp_wifi_stop() );
+    ESP_ERROR_CHECK( esp_netif_deinit() );
+    ESP_ERROR_CHECK( esp_event_loop_delete_default() );
+    vEventGroupDelete(s_wifi_event_group);
+    rt_app_status = RTAPP_STATUS_STOPPED;
+    return 0;
+}
+
+static int wifi_service_get_status(void)
+{
+    return rt_app_status;
+}
+
+RTAPP_EXPORT(wifi_service, wifi_service_init, wifi_service_stop, wifi_service_get_status, RTAPP_FLAGS_AUTO_START|RATPP_FLAGS_SERVICE, NULL, NULL);

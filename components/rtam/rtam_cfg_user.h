@@ -22,6 +22,7 @@
 
 typedef struct rtam_info {
     void *icon;
+    const char *label;
 } RtamInfo;
 
 #endif

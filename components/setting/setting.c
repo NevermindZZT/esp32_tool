@@ -140,6 +140,7 @@ static const char *required[] = {
 
 static RtamInfo setting_info = {
     .icon = (void *) GUI_APP_ICON(setting),
+    // .label = "设置",
 };
 
 RTAPP_EXPORT(setting, setting_init, setting_stop, setting_get_status, 0, required, &setting_info);

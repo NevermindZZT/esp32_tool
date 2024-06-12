@@ -10,9 +10,11 @@
 #include "draw/lv_draw_buf.h"
 #include "esp_lcd_backlight.h"
 #include "esp_log.h"
+#include "font/lv_binfont_loader.h"
 #include "freertos/projdefs.h"
 #include "indev/lv_indev.h"
 #include "misc/lv_area.h"
+#include "misc/lv_style_gen.h"
 #include "misc/lv_types.h"
 #include "stdbool.h"
 #include "stdio.h"
@@ -39,6 +41,8 @@ static lv_obj_t *scr_stack[GUI_MAX_SCREEN_STACK];
 static int rt_app_status = RTAPP_STATUS_STOPPED;
 
 static bool display_on = true;
+
+lv_font_t *source_han_sans_24 = NULL;
 
 static void power_key_press_callback(int key, enum key_action action)
 {
@@ -129,6 +133,20 @@ bool gui_pop_to_frist(lv_screen_load_anim_t anim_type)
     return false;
 }
 
+bool gui_is_han_font_loaded(void)
+{
+    return source_han_sans_24 != NULL;
+}
+
+static void gui_init_font(void)
+{
+    source_han_sans_24 = lv_binfont_create("S:/spiflash/data/font/SourceHanSans.font");
+    if (source_han_sans_24 == NULL) {
+        ESP_LOGE(TAG, "Create font failed");
+        return;
+    }
+}
+
 static void gui_task(void *param)
 {
     xGuiSemaphore = xSemaphoreCreateMutex();
@@ -144,6 +162,7 @@ static void gui_task(void *param)
 #endif
 
     gui_fs_init();
+    // gui_init_font();
 
     lv_display_t *display = lv_display_create(LV_HOR_RES_MAX, LV_VER_RES_MAX);
     lv_display_set_flush_cb(display, disp_driver_flush);

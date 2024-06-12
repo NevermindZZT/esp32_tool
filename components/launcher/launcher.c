@@ -14,6 +14,7 @@
 #include "display/lv_display.h"
 #include "esp_log.h"
 #include "freertos/projdefs.h"
+#include "layouts/lv_layout.h"
 #include "misc/lv_area.h"
 #include "misc/lv_color.h"
 #include "misc/lv_event.h"
@@ -74,12 +75,17 @@ static void launcher_init_screen(void)
     apps_num = rtamGetApps(&apps);
     lv_obj_add_event_cb(scr, launcher_app_event_cb, LV_EVENT_GESTURE, NULL);
 
+    lv_obj_t *status_bar = gui_create_status_bar(scr, true, "Apps");
+
     lv_obj_t *menu = lv_menu_create(scr);
-    lv_obj_set_size(menu, lv_display_get_horizontal_resolution(NULL), lv_display_get_vertical_resolution(NULL));
+    lv_obj_set_size(menu, 
+                    lv_display_get_horizontal_resolution(NULL),
+                    lv_display_get_vertical_resolution(NULL) - lv_obj_get_height(status_bar));
     lv_obj_set_style_bg_color(menu, lv_color_hex(0x000000), LV_PART_MAIN);
     lv_obj_center(menu);
+    lv_obj_set_pos(menu, 0, lv_obj_get_height(status_bar));
 
-    lv_obj_t *main_page = lv_menu_page_create(menu, " Apps");
+    lv_obj_t *main_page = lv_menu_page_create(menu, NULL);
 
     for (int i = 0; i < apps_num; i++) {
         if (apps[i].flags.value & RATPP_FLAGS_SERVICE) {
@@ -88,8 +94,11 @@ static void launcher_init_screen(void)
         }
         ESP_LOGI(TAG, "Find app: %s", apps[i].name);
 
-        lv_obj_t *item = gui_create_menu_item(main_page, lv_obj_get_style_bg_color(menu, 0), 
-                                              ((RtamInfo *) (apps[i].info))->icon, apps[i].name);
+        lv_obj_t *item = gui_create_menu_item(main_page, 
+                                    lv_obj_get_style_bg_color(menu, 0), 
+                                              ((RtamInfo *) (apps[i].info))->icon,
+                                              ((RtamInfo *) apps[i].info)->label 
+                                                    ? ((RtamInfo *) apps[i].info)->label : apps[i].name);
 
         lv_obj_add_event_cb(item, launcher_app_event_cb, LV_EVENT_CLICKED, &apps[i]);
     }

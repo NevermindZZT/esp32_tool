@@ -14,6 +14,7 @@ idf_component_register(
         shell
         storage
         key
+        battery
 )
 
 target_compile_options(${COMPONENT_LIB}

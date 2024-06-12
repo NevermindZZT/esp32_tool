@@ -7,6 +7,7 @@
  * @copyright (c) 2024 Letter All rights reserved.
  */
 
+#include "core/lv_obj_pos.h"
 #include "esp_chip_info.h"
 #include "esp_flash.h"
 #include "freertos/FreeRTOS.h"

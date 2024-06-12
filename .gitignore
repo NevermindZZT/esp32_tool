@@ -4,3 +4,4 @@ build/
 .VSCodeCounter
 managed_components/
 build.log
+components/templates/
