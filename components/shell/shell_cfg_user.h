@@ -47,4 +47,10 @@
  */
 #define     SHELL_USING_FUNC_SIGNATURE  1
 
+/**
+ * @brief 支持数组参数
+ *        使能后，可以在命令中使用数组参数，如`cmd [1,2,3]`
+ *        需要使能 `SHELL_USING_FUNC_SIGNATURE` 宏，并且配置 `SHELL_MALLOC`, `SHELL_FREE`
+ */
+#define     SHELL_SUPPORT_ARRAY_PARAM   1
 #endif

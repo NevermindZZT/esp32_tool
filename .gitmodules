@@ -10,3 +10,6 @@
 [submodule "components/rtam/rtam"]
 	path = components/rtam/rtam
 	url = https://github.com/NevermindZZT/rtam.git
+[submodule "components/cpost/cpost"]
+	path = components/cpost/cpost
+	url = https://github.com/NevermindZZT/cpost.git

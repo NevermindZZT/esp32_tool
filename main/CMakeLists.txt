@@ -6,15 +6,5 @@ idf_component_register(
 
     REQUIRES
         nvs_flash
-        shell
-        hid_device
-        sys
         rtam
-        launcher
-        setting
-        test
-        usb_device
-        battery
-        storage
-        key
 )

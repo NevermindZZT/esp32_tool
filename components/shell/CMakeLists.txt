@@ -2,9 +2,11 @@ idf_component_register(
     SRCS "letter-shell/src/shell.c"
          "letter-shell/src/shell_ext.c"
          "shell_port.c"
+         "letter-shell/extensions/shell_enhance/shell_cmd_group.c"
 
     INCLUDE_DIRS "./"
                  "./letter-shell/src"
+                 "./letter-shell/extensions/shell_enhance"
                  "../"
                  "../rtam"
                  "../rtam/rtam/src"
