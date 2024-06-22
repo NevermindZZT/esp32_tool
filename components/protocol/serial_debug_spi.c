@@ -74,6 +74,7 @@ static void serial_debug_spi_update_info(void)
 void serial_debug_spi_init_info(lv_obj_t *label)
 {
     spi_info_label = label;
+    serial_debug_spi_update_info();
 }
 
 void serial_debug_spi_deinit_info(void)
@@ -114,7 +115,9 @@ void serial_debug_spi_init(int cs_pin, int sclk_pin, int mosi_pin, int miso_pin,
 
 void serial_debug_spi_deinit(void)
 {
-    ESP_ERROR_CHECK(spi_bus_remove_device(NULL));
+    if (spi != NULL) {
+        ESP_ERROR_CHECK(spi_bus_remove_device(spi));
+    }
     ESP_ERROR_CHECK(spi_bus_free(SERIAL_DEBUG_SPI_PORT));
     gpio_reset_pin(info.cs_pin);
     gpio_reset_pin(info.sclk_pin);

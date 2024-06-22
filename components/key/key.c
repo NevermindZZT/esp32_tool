@@ -22,7 +22,6 @@
 
 static const char* TAG = "key";
 
-static int rt_app_status = RTAPP_STATUS_STOPPED;
 static QueueHandle_t gpio_evt_queue = NULL;
 
 static struct key_def keys[] = {
@@ -89,9 +88,8 @@ static void key_task(void* arg)
     }
 }
 
-static int key_init(void)
+static RtAppErr key_init(void)
 {
-    rt_app_status = RTAPP_STATUS_STARING;
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_NEGEDGE,
         .mode = GPIO_MODE_INPUT,
@@ -112,13 +110,11 @@ static int key_init(void)
 
     gpio_evt_queue = xQueueCreate(10, sizeof(uint32_t));
     xTaskCreate(key_task, "key_task", 2048, NULL, 10, NULL);
-
-    rt_app_status = RTAPP_STATUS_RUNNING;
-    return 0;
+    return RTAM_OK;
 }
 
-static int storage_get_status(void)
-{
-    return rt_app_status;
-}
-RTAPP_EXPORT(key, key_init, NULL, storage_get_status, RTAPP_FLAGS_AUTO_START|RATPP_FLAGS_SERVICE, NULL, NULL);
+static const RtAppInterface interface = {
+    .start = key_init,
+};
+
+RTAPP_EXPORT(key, &interface, RTAPP_FLAG_AUTO_START|RTAPP_FLAG_SERVICE, NULL, NULL);

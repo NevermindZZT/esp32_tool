@@ -35,8 +35,6 @@ static const char *TAG = "serial_debug";
 
 static lv_obj_t *screen = NULL;
 
-static int rt_app_status = RTAPP_STATUS_STOPPED;
-
 static lv_obj_t* serial_debug_create_pin_map_screen(void);
 static lv_obj_t* serial_debug_get_screen(void);
 
@@ -51,7 +49,7 @@ void serial_debug_global_event_cb(lv_event_t *event)
         if (dir == LV_DIR_RIGHT /*&& gesture_enabled*/) {
             // gesture_enabled = false;
             if (obj == serial_debug_get_screen()) {
-                rtamTerminate("serial_debug");
+                rtamExit("serial_debug");
             } else {
                 gui_back();
             }
@@ -156,52 +154,59 @@ static void serial_debug_init_screen(void)
     lv_obj_set_style_text_font(spi_label, &lv_font_montserrat_16, LV_PART_MAIN);
 }
 
-static void serial_debug_resume(void)
+static RtAppErr serial_debug_resume(void)
 {
-    gui_push_screen(serial_debug_get_screen(), LV_SCR_LOAD_ANIM_FADE_IN);
-}
-
-static int serial_debug_init(void)
-{
-    rt_app_status = RTAPP_STATUS_STARING;
     serial_debug_init_screen();
-    serial_debug_resume();
-    
-    serial_debug_uart_init(12, 11, 10, 9);
-    serial_debug_i2c_init(21, 47);
-    serial_debug_spi_init(42, 41, 40, 39, 38, 48);
-    rt_app_status = RTAPP_STATUS_RUNNING;
-    return 0;
+    gui_push_screen(serial_debug_get_screen(), LV_SCR_LOAD_ANIM_FADE_IN);
+    return RTAM_OK;
 }
 
-static int serial_debug_stop(void)
+static RtAppErr serial_debug_suspend(void)
 {
-    rt_app_status = RTAPP_STATUS_STOPPING;
-    serial_debug_uart_deinit();
-    serial_debug_i2c_deinit();
-    serial_debug_spi_deinit();
+    serial_debug_uart_deinit_info();
+    serial_debug_i2c_deinit_info();
+    serial_debug_spi_deinit_info();
 
     launcher_go_home(LV_SCR_LOAD_ANIM_MOVE_RIGHT, true);
     screen = NULL;
-    rt_app_status = RTAPP_STATUS_STOPPED;
-    return 0;
+    return RTAM_OK;
 }
 
-static int serial_debug_get_status(void)
+static RtAppErr serial_debug_init(void)
 {
-    return rt_app_status;
+    serial_debug_uart_init(12, 11, 10, 9);
+    serial_debug_i2c_init(21, 47);
+    serial_debug_spi_init(42, 41, 40, 39, 38, 48);
+    return RTAM_OK;
 }
 
-static const char *required[] = {
-    "gui",
-    "launcher",
-    NULL
+static RtAppErr serial_debug_stop(void)
+{
+    serial_debug_uart_deinit();
+    serial_debug_i2c_deinit();
+    serial_debug_spi_deinit();
+    return RTAM_OK;
+}
+
+static const RtAppInterface interface = {
+    .start = serial_debug_init,
+    .stop = serial_debug_stop,
+    .resume = serial_debug_resume,
+    .suspend = serial_debug_suspend,
+};
+
+static const RtAppDependencies dependencies = {
+    .required = (const char *[]){
+        "gui",
+        "launcher",
+        NULL
+    },
 };
 
 extern const lv_image_dsc_t icon_app_serial_debug;
-static RtamInfo serial_debug_info = {
+static const RtamInfo serial_debug_info = {
     .label = "serial debug",
     .icon = (void *) GUI_APP_ICON(serial_debug),
 };
 
-RTAPP_EXPORT(serial_debug, serial_debug_init, serial_debug_stop, serial_debug_get_status, 0, required, &serial_debug_info);
+RTAPP_EXPORT(serial_debug, &interface, RTAPP_FLAG_BACKGROUND, &dependencies, &serial_debug_info);

@@ -68,6 +68,7 @@ static void serial_debug_i2c_update_info(void)
 void serial_debug_i2c_init_info(lv_obj_t *label)
 {
     i2c_info_label = label;
+    serial_debug_i2c_update_info();
 }
 
 void serial_debug_i2c_deinit_info(void)

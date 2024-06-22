@@ -38,8 +38,6 @@ static SemaphoreHandle_t xGuiSemaphore;
 
 static lv_obj_t *scr_stack[GUI_MAX_SCREEN_STACK];
 
-static int rt_app_status = RTAPP_STATUS_STOPPED;
-
 static bool display_on = true;
 
 lv_font_t *source_han_sans_24 = NULL;
@@ -186,11 +184,17 @@ static void gui_task(void *param)
 
     key_register_callback("power", power_key_press_callback);
 
+    if (pdTRUE == gui_lock()) {
+        lv_timer_handler();
+        rtamSetStatus("gui", RTAPP_STATUS_STARTED, 1);
+        gui_unlock();
+    }
+    vTaskDelay(pdMS_TO_TICKS(10));
+
     while (1) {
         /* Try to take the semaphore, call lvgl related function on success */
         if (pdTRUE == gui_lock()) {
             lv_timer_handler();
-            rt_app_status = RTAPP_STATUS_RUNNING;
             gui_unlock();
         }
         
@@ -198,21 +202,21 @@ static void gui_task(void *param)
     }
 }
 
-static int gui_init(void)
+static RtAppErr gui_init(void)
 {
-    rt_app_status = RTAPP_STATUS_STARING;
     xTaskCreatePinnedToCore(gui_task, "guiTask", 8192, NULL, 8, NULL, 0);
-    return 0;
+    return RTAM_PROCESSING;
 }
 
-static int gui_get_status(void)
-{
-    return rt_app_status;
-}
-
-static const char *required[] = {
-    "storage",
-    NULL
+static const RtAppInterface interface = {
+    .start = gui_init,
 };
 
-RTAPP_EXPORT(gui, gui_init, NULL, gui_get_status, RTAPP_FLAGS_AUTO_START|RATPP_FLAGS_SERVICE, required, NULL);
+static const RtAppDependencies dependencies = {
+    .required = (const char *[]){
+        "storage",
+        NULL
+    },
+};
+
+RTAPP_EXPORT(gui, &interface, RTAPP_FLAG_AUTO_START|RTAPP_FLAG_SERVICE, &dependencies, NULL);

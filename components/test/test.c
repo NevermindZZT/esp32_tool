@@ -95,11 +95,9 @@ static void slider_event_cb(lv_event_t * e)
 
 static const char *TAG = "test";
 
-static int rt_app_status = RTAPP_STATUS_STOPPED;
-
 static lv_obj_t *screen = NULL;
 
-static int test_stop(void);
+static RtAppErr test_stop(void);
 
 static void test_global_event_cb(lv_event_t *event)
 {
@@ -137,38 +135,38 @@ static void test_resume(void)
     lv_scr_load_anim(test_get_screen(), LV_SCR_LOAD_ANIM_FADE_IN, 200, 0, false);
 }
 
-static int test_init(void)
+static RtAppErr test_init(void)
 {
-    rt_app_status = RTAPP_STATUS_STARING;
     test_init_screen();
     test_resume();
-    rt_app_status = RTAPP_STATUS_RUNNING;
-    return 0;
+    return RTAM_OK;
 }
 
-static int test_stop(void)
+static RtAppErr test_stop(void)
 {
-    rt_app_status = RTAPP_STATUS_STOPPING;
     launcher_go_home(LV_SCR_LOAD_ANIM_MOVE_RIGHT, true);
     screen = NULL;
-    rt_app_status = RTAPP_STATUS_STOPPED;
-    return 0;
+    return RTAM_OK;
 }
 
-static int test_get_status(void)
-{
-    return rt_app_status;
-}
+static const RtAppInterface interface = {
+    .start = test_init,
+    .stop = test_stop,
+};
 
 static const char *required[] = {
     "gui",
     NULL
 };
 
+static const RtAppDependencies dependencies = {
+    .required = required,
+};
+
 extern const lv_image_dsc_t icon_app_test;
 
-static RtamInfo test_info = {
+static const RtamInfo test_info = {
     .icon = (void *) GUI_APP_ICON(test),
 };
 
-RTAPP_EXPORT(test, test_init, test_stop, test_get_status, 0, required, &test_info);
+RTAPP_EXPORT(test, &interface, 0, &dependencies, &test_info);

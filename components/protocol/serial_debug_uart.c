@@ -101,6 +101,7 @@ static void serial_debug_uart_update_info(void)
 void serial_debug_uart_init_info(lv_obj_t *label)
 {
     uart_info_label = label;
+    serial_debug_uart_update_info();
 }
 
 void serial_debug_uart_deinit_info(void)

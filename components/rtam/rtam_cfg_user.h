@@ -16,9 +16,15 @@
 
 #define RTAM_PRINT(...)                 ESP_LOGI("rtam", __VA_ARGS__)
 
+#define RTAM_MALLOC(x)                  heap_caps_malloc(x, MALLOC_CAP_DEFAULT)
+
+#define RTAM_FREE(x)                    heap_caps_free(x)
+
 #define RTAM_WITH_LETTER_SHELL          1
 
 #define RTAM_DELAY(ms)                  vTaskDelay(pdMS_TO_TICKS(ms))
+
+#define RTAM_DEBUG_ENABLE               1
 
 typedef struct rtam_info {
     void *icon;

@@ -144,7 +144,7 @@ void tinyusb_cdc_line_state_changed_callback(int itf, cdcacm_event_t *event)
 }
 #endif
 
-int usb_device_init(void)
+RtAppErr usb_device_init(void)
 {
 #if defined(USB_DEVICE_USER_TINYUSB)
     const tinyusb_config_t tusb_cfg = { 0 };
@@ -167,14 +167,23 @@ int usb_device_init(void)
         .wl_handle = storage_get_internal_handle(),
     };
     tinyusb_msc_storage_init_spiflash(&config_spi);
-    return 0;
+    return RTAM_OK;
 }
+
+static const RtAppInterface interface = {
+    .start = usb_device_init,
+};
 
 static const char *required[] = {
     "storage",
     NULL
 };
-RTAPP_EXPORT(usb_device, usb_device_init, NULL, NULL, RTAPP_FLAGS_AUTO_START|RATPP_FLAGS_SERVICE, required, NULL);
+
+static const RtAppDependencies dependencies = {
+    .required = required,
+};
+
+RTAPP_EXPORT(usb_device, &interface, RTAPP_FLAG_AUTO_START|RTAPP_FLAG_SERVICE, &dependencies, NULL);
 
 void usb_switch_log(char cdc)
 {

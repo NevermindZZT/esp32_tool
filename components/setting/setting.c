@@ -44,8 +44,6 @@
 
 static const char *TAG = "setting";
 
-static int rt_app_status = RTAPP_STATUS_STOPPED;
-
 static lv_obj_t *screen = NULL;
 
 static lv_obj_t* (*item_get_screen[SETTING_ID_MAX])(void) = {
@@ -53,7 +51,7 @@ static lv_obj_t* (*item_get_screen[SETTING_ID_MAX])(void) = {
     [SETTING_ABOUT] = setting_create_about,
 };
 
-static int setting_stop(void);
+static RtAppErr setting_stop(void);
 
 static void setting_item_event_cb(lv_event_t *event)
 {
@@ -110,37 +108,37 @@ static void setting_resume(void)
     gui_push_screen(setting_get_screen(), LV_SCR_LOAD_ANIM_FADE_IN);
 }
 
-static int setting_init(void)
+static RtAppErr setting_init(void)
 {
-    rt_app_status = RTAPP_STATUS_STARING;
     setting_init_screen();
     setting_resume();
-    rt_app_status = RTAPP_STATUS_RUNNING;
-    return 0;
+    return RTAM_OK;
 }
 
-static int setting_stop(void)
+static RtAppErr setting_stop(void)
 {
-    rt_app_status = RTAPP_STATUS_STOPPING;
     launcher_go_home(LV_SCR_LOAD_ANIM_MOVE_RIGHT, true);
     screen = NULL;
-    rt_app_status = RTAPP_STATUS_STOPPED;
-    return 0;
+    return RTAM_OK;
 }
 
-static int setting_get_status(void)
-{
-    return rt_app_status;
-}
+static const RtAppInterface interface = {
+    .start = setting_init,
+    .stop = setting_stop,
+};
 
 static const char *required[] = {
     "gui",
     NULL
 };
 
-static RtamInfo setting_info = {
+static const RtAppDependencies dependencies = {
+    .required = required,
+};
+
+static const RtamInfo setting_info = {
     .icon = (void *) GUI_APP_ICON(setting),
     // .label = "设置",
 };
 
-RTAPP_EXPORT(setting, setting_init, setting_stop, setting_get_status, 0, required, &setting_info);
+RTAPP_EXPORT(setting, &interface, 0, &dependencies, &setting_info);

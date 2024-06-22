@@ -24,8 +24,6 @@
  
 static const char *TAG = "wifi_service";
 
-static int rt_app_status = RTAPP_STATUS_STOPPED;
-
 static EventGroupHandle_t s_wifi_event_group;
 static const int CONNECTED_BIT = BIT0;
 static const int ESPTOUCH_DONE_BIT = BIT1;
@@ -86,9 +84,8 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
-static int wifi_service_init(void)
+static RtAppErr wifi_service_init(void)
 {
-    rt_app_status = RTAPP_STATUS_STARING;
     ESP_ERROR_CHECK(esp_netif_init());
     s_wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -105,13 +102,11 @@ static int wifi_service_init(void)
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK( esp_wifi_start() );
 
-    rt_app_status = RTAPP_STATUS_RUNNING;
-    return 0;
+    return RTAM_OK;
 }
 
-static int wifi_service_stop(void)
+static RtAppErr wifi_service_stop(void)
 {
-    rt_app_status = RTAPP_STATUS_STOPPING;
     ESP_ERROR_CHECK( esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler) );
     ESP_ERROR_CHECK( esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler) );
     ESP_ERROR_CHECK( esp_event_handler_unregister(SC_EVENT, ESP_EVENT_ANY_ID, &event_handler) );
@@ -119,13 +114,12 @@ static int wifi_service_stop(void)
     ESP_ERROR_CHECK( esp_netif_deinit() );
     ESP_ERROR_CHECK( esp_event_loop_delete_default() );
     vEventGroupDelete(s_wifi_event_group);
-    rt_app_status = RTAPP_STATUS_STOPPED;
-    return 0;
+    return RTAM_OK;
 }
 
-static int wifi_service_get_status(void)
-{
-    return rt_app_status;
-}
+static const RtAppInterface interface = {
+    .start = wifi_service_init,
+    .stop = wifi_service_stop,
+};
 
-RTAPP_EXPORT(wifi_service, wifi_service_init, wifi_service_stop, wifi_service_get_status, RTAPP_FLAGS_AUTO_START|RATPP_FLAGS_SERVICE, NULL, NULL);
+RTAPP_EXPORT(wifi_service, &interface, RTAPP_FLAG_AUTO_START|RTAPP_FLAG_SERVICE, NULL, NULL);

@@ -52,7 +52,7 @@ signed short userShellRead(char *data, unsigned short len)
  * @brief 用户shell初始化
  * 
  */
-int userShellInit(void)
+RtAppErr userShellInit(void)
 {
     uart_config_t uartConfig = {
         .baud_rate = 115200,
@@ -69,9 +69,14 @@ int userShellInit(void)
 
     xTaskCreate(shellTask, "shell", 8192, &shell, 10, NULL);
 
-    return 0;
+    return RTAM_OK;
 }
-RTAPP_EXPORT(shell, userShellInit, NULL, NULL, RTAPP_FLAGS_AUTO_START|RATPP_FLAGS_SERVICE, NULL, NULL);
+
+static const RtAppInterface interface = {
+    .start = userShellInit,
+};
+
+RTAPP_EXPORT(shell, &interface, RTAPP_FLAG_AUTO_START|RTAPP_FLAG_SERVICE, NULL, NULL);
 
 static void test(void)
 {

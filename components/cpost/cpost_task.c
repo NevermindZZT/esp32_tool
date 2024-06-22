@@ -20,9 +20,14 @@ void cpost_task(void *param)
     }
 }
 
-int cpost_init(void)
+RtAppErr cpost_init(void)
 {
     xTaskCreate(cpost_task, "cpost", 4096, NULL, 2, NULL);
-    return 0;
+    return RTAM_OK;
 }
-RTAPP_EXPORT(cpost, cpost_init, NULL, NULL, RTAPP_FLAGS_AUTO_START|RATPP_FLAGS_SERVICE, NULL, NULL);
+
+static const RtAppInterface interface = {
+    .start = cpost_init,
+};
+
+RTAPP_EXPORT(cpost, &interface, RTAPP_FLAG_AUTO_START|RTAPP_FLAG_SERVICE, NULL, NULL);

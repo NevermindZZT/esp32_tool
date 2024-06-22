@@ -32,8 +32,6 @@
 
 static const char *TAG = "smartconfig";
 
-static int rt_app_status = RTAPP_STATUS_STOPPED;
-
 static lv_obj_t *screen = NULL;
 
 extern const lv_image_dsc_t icon_app_smartconfig;
@@ -102,31 +100,26 @@ static void smartconfig_resume(void)
     ESP_ERROR_CHECK( esp_smartconfig_start(&cfg) );
 }
 
-static int smartconfig_init(void)
+static RtAppErr smartconfig_init(void)
 {
-    rt_app_status = RTAPP_STATUS_STARING;
     smartconfig_init_screen();
     smartconfig_resume();
-    rt_app_status = RTAPP_STATUS_RUNNING;
-    return 0;
+    return RTAM_OK;
 }
 
-static int smartconfig_stop(void)
+static RtAppErr smartconfig_stop(void)
 {
-    rt_app_status = RTAPP_STATUS_STOPPING;
-
     esp_smartconfig_stop();
 
     launcher_go_home(LV_SCR_LOAD_ANIM_MOVE_RIGHT, true);
     screen = NULL;
-    rt_app_status = RTAPP_STATUS_STOPPED;
-    return 0;
+    return RTAM_OK;
 }
 
-static int smartconfig_get_status(void)
-{
-    return rt_app_status;
-}
+static const RtAppInterface interface = {
+    .start = smartconfig_init,
+    .stop = smartconfig_stop,
+};
 
 static const char *required[] = {
     "gui",
@@ -134,8 +127,12 @@ static const char *required[] = {
     NULL
 };
 
-static RtamInfo smartconfig_info = {
+static const RtAppDependencies dependencies = {
+    .required = required,
+};
+
+static const RtamInfo smartconfig_info = {
     .icon = (void *) GUI_APP_ICON(smartconfig),
 };
 
-RTAPP_EXPORT(smartconfig, smartconfig_init, smartconfig_stop, smartconfig_get_status, 0, required, &smartconfig_info);
+RTAPP_EXPORT(smartconfig, &interface, 0, &dependencies, &smartconfig_info);

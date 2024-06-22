@@ -92,7 +92,7 @@ void battery_info(void)
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC),
 battery, battery_info, get battery info);
 
-int battery_init(void)
+RtAppErr battery_init(void)
 {
     adc_oneshot_unit_init_cfg_t init_cfg = {
         .unit_id = BATTERY_ADC_UINT,
@@ -125,13 +125,19 @@ int battery_init(void)
     io_conf.pin_bit_mask = 1ULL << BATTERY_STANDBY_GPIO;
     gpio_config(&io_conf);
 
-    return 0;
+    return RTAM_OK;
 }
 
-int battery_deinit(void)
+RtAppErr battery_deinit(void)
 {
     ESP_ERROR_CHECK(adc_oneshot_del_unit(adc_handle));
     ESP_ERROR_CHECK(adc_cali_delete_scheme_curve_fitting(cali_handle));
-    return 0;
+    return RTAM_OK;
 }
-RTAPP_EXPORT(battery, battery_init, NULL, NULL, RTAPP_FLAGS_AUTO_START|RATPP_FLAGS_SERVICE, NULL, NULL);
+
+static const RtAppInterface interface = {
+    .start = battery_init,
+    .stop = battery_deinit,
+};
+
+RTAPP_EXPORT(battery, &interface, RTAPP_FLAG_AUTO_START|RTAPP_FLAG_SERVICE, NULL, NULL);

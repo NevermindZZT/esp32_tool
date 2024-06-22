@@ -42,8 +42,6 @@
 
 static const char *TAG = "launcher";
 
-static int rt_app_status = RTAPP_STATUS_STOPPED;
-
 static lv_obj_t *screen = NULL;
 
 static lv_obj_t *launcher_get_screen(void)
@@ -89,7 +87,7 @@ static void launcher_init_screen(void)
     lv_obj_t *main_page = lv_menu_page_create(menu, NULL);
 
     for (int i = 0; i < apps_num; i++) {
-        if (apps[i].flags.value & RATPP_FLAGS_SERVICE) {
+        if (apps[i].flags.value & RTAPP_FLAG_SERVICE) {
             ESP_LOGI(TAG, "Find service app: %s", apps[i].name);
             continue;
         }
@@ -120,24 +118,24 @@ static void launcher_resume(void)
     // lv_scr_load_anim(launcher_get_screen(), LV_SCR_LOAD_ANIM_FADE_IN, 200, 0, false);
 }
 
-static int launcher_init(void)
+static RtAppErr launcher_init(void)
 {
-    rt_app_status = RTAPP_STATUS_STARING;
     launcher_init_screen();
     gui_unlock();
     launcher_resume();
-    rt_app_status = RTAPP_STATUS_RUNNING;
-    return 0;
+    return RTAM_OK;
 }
 
-static int launcher_get_status(void)
-{
-    return rt_app_status;
-}
-
-static const char *required[] = {
-    "gui",
-    NULL
+static const RtAppInterface interface = {
+    .start = launcher_init,
+    .stop = NULL,
 };
 
-RTAPP_EXPORT(launcher, launcher_init, NULL, launcher_get_status, RTAPP_FLAGS_AUTO_START|RATPP_FLAGS_SERVICE, required, NULL);
+static const RtAppDependencies dependencies = {
+    .required = (const char *[]){
+        "gui",
+        NULL
+    },
+};
+
+RTAPP_EXPORT(launcher, &interface, RTAPP_FLAG_AUTO_START|RTAPP_FLAG_SERVICE, &dependencies, NULL);
