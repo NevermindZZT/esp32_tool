@@ -56,8 +56,7 @@ static struct i2c_info info = {
 static void serial_debug_i2c_update_info(void)
 {
     if (i2c_info_label) {
-        lv_label_set_text_fmt(i2c_info_label, "I2C\n"
-            "Pullup: %s\n"
+        lv_label_set_text_fmt(i2c_info_label, "Pullup: %s\n"
             "Speed: %d\n"
             "Data sent: %ld\n"
             "Data received: %ld",

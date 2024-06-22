@@ -80,8 +80,8 @@ static void serial_debug_uart_update_info(void)
                               "Stop bits: %s\n"
                               "Flow control: %s\n"
                               "Mode: %s\n"
-                              "Send: %ld\n"
-                              "Receive: %ld",
+                              "Data sent: %ld\n"
+                              "Data received: %ld",
                               (int) baudrate,
                               data_bits == UART_DATA_5_BITS ? "5"
                                     : (data_bits == UART_DATA_6_BITS) ? "6"

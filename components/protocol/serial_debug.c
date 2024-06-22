@@ -90,6 +90,8 @@ static lv_obj_t* serial_debug_create_pin_map_screen(void)
     protocol_set_pin_map(41, "MCLK", lv_palette_main(LV_PALETTE_GREEN));
     protocol_set_pin_map(40, "MOSI", lv_palette_main(LV_PALETTE_GREEN));
     protocol_set_pin_map(39, "MISO", lv_palette_main(LV_PALETTE_GREEN));
+    protocol_set_pin_map(38, "MIO2", lv_palette_main(LV_PALETTE_GREEN));
+    protocol_set_pin_map(48, "MIO3", lv_palette_main(LV_PALETTE_GREEN));
     protocol_set_pin_map(47, "SCL", lv_palette_main(LV_PALETTE_CYAN));
     protocol_set_pin_map(21, "SDA", lv_palette_main(LV_PALETTE_CYAN));
     protocol_set_pin_map(12, "TX1", lv_palette_main(LV_PALETTE_BLUE));
@@ -167,6 +169,7 @@ static int serial_debug_init(void)
     
     serial_debug_uart_init(12, 11, 10, 9);
     serial_debug_i2c_init(21, 47);
+    serial_debug_spi_init(42, 41, 40, 39, 38, 48);
     rt_app_status = RTAPP_STATUS_RUNNING;
     return 0;
 }
@@ -176,6 +179,7 @@ static int serial_debug_stop(void)
     rt_app_status = RTAPP_STATUS_STOPPING;
     serial_debug_uart_deinit();
     serial_debug_i2c_deinit();
+    serial_debug_spi_deinit();
 
     launcher_go_home(LV_SCR_LOAD_ANIM_MOVE_RIGHT, true);
     screen = NULL;

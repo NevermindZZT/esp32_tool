@@ -13,7 +13,7 @@
 
 void serial_debug_spi_init_info(lv_obj_t *label);
 void serial_debug_spi_deinit_info(void);
-void serial_debug_spi_init(int miso_pin, int mosi_pin, int sclk_pin, int cs_pin);
+void serial_debug_spi_init(int cs_pin, int sclk_pin, int mosi_pin, int miso_pin, int mio2_pin, int mio3_pin);
 void serial_debug_spi_deinit(void);
 
-#endif /* __SERIAL_DEBUG_SPI_H__ */
+#endif /* __SERIAL_DEBUG_SPI_H__ */ 
