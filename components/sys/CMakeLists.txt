@@ -19,4 +19,5 @@ target_link_libraries(
     INTERFACE
         "-u shellCommandsysInfo"
         "-u shellCommandps"
+        "-u shellCommandintr"
 )

@@ -10,6 +10,7 @@
 #include "esp_task_wdt.h"
 #include "freertos/projdefs.h"
 #include "hal/uart_types.h"
+#include "sdkconfig.h"
 #include "shell.h"
 #include "shell_cmd_group.h"
 #include "shell_ext.h"
@@ -33,7 +34,7 @@
 #include "widgets/label/lv_label.h"
 #include "cpost.h"
 
-#define SERIAL_DEBUG_UART_PORT UART_NUM_1
+#define SERIAL_DEBUG_UART_PORT CONFIG_PROTOCOL_SERIAL_DEBUG_UART_PORT
 
 #define SERIAL_DEBUG_UART_CONSOLE_EXIT_KEY 0x04 // Ctrl D
 
@@ -48,10 +49,10 @@ struct uart_info {
     bool run;
     char uart_mode;
     Shell *active_shell;
-    int tx_pin;
-    int rx_pin;
-    int rts_pin;
-    int cts_pin;
+    int tx_io;
+    int rx_io;
+    int rts_io;
+    int cts_io;
     long data_num_sent;
     long data_num_received;
 };
@@ -66,13 +67,13 @@ static void serial_debug_uart_update_info(void)
     uart_stop_bits_t stop_bits;
     uart_hw_flowcontrol_t flow_ctrl;
 
-    uart_get_baudrate(SERIAL_DEBUG_UART_PORT, &baudrate);
-    uart_get_word_length(SERIAL_DEBUG_UART_PORT, &data_bits);
-    uart_get_parity(SERIAL_DEBUG_UART_PORT, &parity);
-    uart_get_stop_bits(SERIAL_DEBUG_UART_PORT, &stop_bits);
-    uart_get_hw_flow_ctrl(SERIAL_DEBUG_UART_PORT, &flow_ctrl);
-
     if (uart_info_label) {
+        uart_get_baudrate(SERIAL_DEBUG_UART_PORT, &baudrate);
+        uart_get_word_length(SERIAL_DEBUG_UART_PORT, &data_bits);
+        uart_get_parity(SERIAL_DEBUG_UART_PORT, &parity);
+        uart_get_stop_bits(SERIAL_DEBUG_UART_PORT, &stop_bits);
+        uart_get_hw_flow_ctrl(SERIAL_DEBUG_UART_PORT, &flow_ctrl);
+
         lv_label_set_text_fmt(uart_info_label,
                               "Baudrate: %d\n"
                               "Data bits: %s\n"
@@ -119,7 +120,7 @@ static void serial_debug_uart_task(void *param)
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
     };
     uart_set_pin(SERIAL_DEBUG_UART_PORT, 
-                 info.tx_pin, info.rx_pin, info.rts_pin, info.cts_pin);
+                 info.tx_io, info.rx_io, info.rts_io, info.cts_io);
     uart_param_config(SERIAL_DEBUG_UART_PORT, &uart_config);
     uart_driver_install(SERIAL_DEBUG_UART_PORT, 512, 512, 0, NULL, 0);
 
@@ -144,10 +145,10 @@ static void serial_debug_uart_task(void *param)
     heap_caps_free(data);
     
     uart_driver_delete(SERIAL_DEBUG_UART_PORT);
-    gpio_reset_pin(info.tx_pin);
-    gpio_reset_pin(info.rx_pin);
-    gpio_reset_pin(info.rts_pin);
-    gpio_reset_pin(info.cts_pin);
+    gpio_reset_pin(info.tx_io);
+    gpio_reset_pin(info.rx_io);
+    gpio_reset_pin(info.rts_io);
+    gpio_reset_pin(info.cts_io);
 
     vTaskDelete(NULL);
 }
@@ -155,10 +156,15 @@ static void serial_debug_uart_task(void *param)
 void serial_debug_uart_init(int tx_pin, int rx_pin, int rts_pin, int cts_pin)
 {
     info.run = true;
-    info.tx_pin = tx_pin;
-    info.rx_pin = rx_pin;
-    info.rts_pin = rts_pin;
-    info.cts_pin = cts_pin;
+    info.tx_io = protocol_get_io(tx_pin);
+    info.rx_io = protocol_get_io(rx_pin);
+    info.rts_io = protocol_get_io(rts_pin);
+    info.cts_io = protocol_get_io(cts_pin);
+    ESP_LOGI(TAG, "tx: %d, rx: %d, rts: %d, cts: %d", info.tx_io, info.rx_io, info.rts_io, info.cts_io);
+    protocol_set_pin(tx_pin, "TXD", lv_palette_main(LV_PALETTE_BLUE));
+    protocol_set_pin(rx_pin, "RXD", lv_palette_main(LV_PALETTE_BLUE));
+    protocol_set_pin(rts_pin, "RTS", lv_palette_main(LV_PALETTE_BLUE));
+    protocol_set_pin(cts_pin, "CTS", lv_palette_main(LV_PALETTE_BLUE));
     xTaskCreate(serial_debug_uart_task, "serial debug uart", 4096, NULL, 1, NULL);
 }
 
@@ -288,7 +294,7 @@ static void serial_debug_uart_console(void)
             } else {
                 uart_write_bytes(SERIAL_DEBUG_UART_PORT, &data, 1);
                 info.data_num_sent++;
-                cpost(serial_debug_uart_update_info, .delay=50, .attrs.flag=CPOST_FLAG_CANCEL_CURRENT);
+                cpost(0, serial_debug_uart_update_info, .delay=50, .attrs.flag=CPOST_FLAG_CANCEL_CURRENT);
             }
         }
     }

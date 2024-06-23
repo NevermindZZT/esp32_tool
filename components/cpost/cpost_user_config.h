@@ -9,6 +9,7 @@
 #ifndef __CPOST_USER_CONFIG_H__
 #define __CPOST_USER_CONFIG_H__
 
+#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -20,11 +21,17 @@
 /**
  * @brief 获取系统tick函数
  */
-#define     CPOST_GET_TICK()            xTaskGetTickCount()
+#define     CPOST_GET_TICK()            esp_log_timestamp()
 
 /**
  * @brief tick最大值
  */
 #define     CPOST_MAX_TICK              0xFFFFFFFF
+
+
+/**
+* @brief 是否支持多个 Process
+*/
+#define     CPOST_MULTI_PROCESS         1
 
 #endif /* __CPOST_USER_CONFIG_H__ */

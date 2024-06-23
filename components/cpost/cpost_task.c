@@ -13,16 +13,18 @@
 
 void cpost_task(void *param)
 {
+    size_t process = (size_t)param;
     while (1)
     {
         vTaskDelay(pdMS_TO_TICKS(10));
-        cpostProcess();
+        cpostProcess(process);
     }
 }
 
 RtAppErr cpost_init(void)
 {
-    xTaskCreate(cpost_task, "cpost", 4096, NULL, 2, NULL);
+    xTaskCreatePinnedToCore(cpost_task, "cpost0", 4096, (void *)0, 2, NULL, 0);
+    xTaskCreatePinnedToCore(cpost_task, "cpost1", 4096, (void *)1, 2, NULL, 1);
     return RTAM_OK;
 }
 

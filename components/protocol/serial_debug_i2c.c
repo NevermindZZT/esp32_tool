@@ -6,6 +6,7 @@
  * @date 2024-06-13
  * @copyright (c) 2024 Letter All rights reserved.
  */
+#include "sdkconfig.h"
 #include "driver/gpio.h"
 #include "driver/i2c.h"
 #include "esp_err.h"
@@ -33,15 +34,15 @@
 #include "stdlib/lv_sprintf.h"
 #include "widgets/label/lv_label.h"
 
-#define SERIAL_DEBUG_I2C_PORT I2C_NUM_0
+#define SERIAL_DEBUG_I2C_PORT CONFIG_PROTOCOL_SERIAL_DEBUG_I2C_PORT
 
 static const char *TAG = "serial_debug_i2c";
 
 static lv_obj_t *i2c_info_label = NULL;
 
 struct i2c_info {
-    int sda_pin;
-    int scl_pin;
+    int sda_io;
+    int scl_io;
     bool pullup_en;
     int speed;
     long data_num_sent;
@@ -78,18 +79,21 @@ void serial_debug_i2c_deinit_info(void)
 
 void serial_debug_i2c_init(int sda_pin, int scl_pin)
 {
-    info.sda_pin = sda_pin;
-    info.scl_pin = scl_pin;
+    info.sda_io = protocol_get_io(sda_pin);
+    info.scl_io = protocol_get_io(scl_pin);
+    ESP_LOGI(TAG, "sda: %d, scl: %d", info.sda_io, info.scl_io);
+    protocol_set_pin(sda_pin, "SDA", lv_palette_main(LV_PALETTE_CYAN));
+    protocol_set_pin(scl_pin, "SCL", lv_palette_main(LV_PALETTE_CYAN));
     i2c_config_t conf = {
         .mode = I2C_MODE_MASTER,
-        .sda_io_num = sda_pin,
-        .scl_io_num = scl_pin,
+        .sda_io_num = info.sda_io,
+        .scl_io_num = info.scl_io,
         .sda_pullup_en = info.pullup_en,
         .scl_pullup_en = info.pullup_en,
         .master.clk_speed = info.speed,
     };
     ESP_ERROR_CHECK(i2c_param_config(SERIAL_DEBUG_I2C_PORT, &conf));
-    ESP_ERROR_CHECK(i2c_driver_install(SERIAL_DEBUG_I2C_PORT, conf.mode, 0, 0, 0));
+    ESP_ERROR_CHECK(i2c_driver_install(SERIAL_DEBUG_I2C_PORT, conf.mode, 0, 0, ESP_INTR_FLAG_SHARED|ESP_INTR_FLAG_LEVEL3));
     
     serial_debug_i2c_update_info();
 }
@@ -97,8 +101,8 @@ void serial_debug_i2c_init(int sda_pin, int scl_pin)
 void serial_debug_i2c_deinit(void)
 {
     ESP_ERROR_CHECK(i2c_driver_delete(SERIAL_DEBUG_I2C_PORT));
-    gpio_reset_pin(info.sda_pin);
-    gpio_reset_pin(info.scl_pin);
+    gpio_reset_pin(info.sda_io);
+    gpio_reset_pin(info.scl_io);
 }
 
 void serial_debug_i2c_set_speed(int speed)
@@ -106,8 +110,8 @@ void serial_debug_i2c_set_speed(int speed)
     info.speed = speed;
     i2c_config_t conf = {
         .mode = I2C_MODE_MASTER,
-        .sda_io_num = info.sda_pin,
-        .scl_io_num = info.scl_pin,
+        .sda_io_num = info.sda_io,
+        .scl_io_num = info.scl_io,
         .sda_pullup_en = info.pullup_en,
         .scl_pullup_en = info.pullup_en,
         .master.clk_speed = info.speed,
@@ -121,8 +125,8 @@ void serial_debug_i2c_set_pullup(char pullup)
     info.pullup_en = pullup ? true : false;
     i2c_config_t conf = {
         .mode = I2C_MODE_MASTER,
-        .sda_io_num = info.sda_pin,
-        .scl_io_num = info.scl_pin,
+        .sda_io_num = info.sda_io,
+        .scl_io_num = info.scl_io,
         .sda_pullup_en = info.pullup_en,
         .scl_pullup_en = info.pullup_en,
         .master.clk_speed = info.speed,

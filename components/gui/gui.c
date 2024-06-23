@@ -69,7 +69,9 @@ static void lv_log_cb(lv_log_level_t level, const char *buf)
 static void lv_tick_task(void *arg)
 {
    (void)arg;
+//    gui_lock();
    lv_tick_inc(10);
+//    gui_unlock();
 }
 
 static uint32_t lv_get_tick_cb(void)
@@ -112,8 +114,8 @@ bool gui_pop_screen(lv_screen_load_anim_t anim_type)
 
 bool gui_pop_to_frist(lv_screen_load_anim_t anim_type)
 {
-    if (scr_stack[0] != NULL && lv_screen_active() != scr_stack[0]) {
-        lv_obj_t *current_screen = lv_screen_active();
+    lv_obj_t *current_screen = lv_screen_active();
+    if (scr_stack[0] != NULL && current_screen != scr_stack[0]) {
         for (int i = 1; i < GUI_MAX_SCREEN_STACK; i++) {
             if (scr_stack[i] == NULL) {
                 break;
@@ -186,7 +188,7 @@ static void gui_task(void *param)
 
     if (pdTRUE == gui_lock()) {
         lv_timer_handler();
-        rtamSetStatus("gui", RTAPP_STATUS_STARTED, 1);
+    rtamSetStatus("gui", RTAPP_STATUS_STARTED, 1);
         gui_unlock();
     }
     vTaskDelay(pdMS_TO_TICKS(10));

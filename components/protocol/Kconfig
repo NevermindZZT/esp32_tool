@@ -1,0 +1,252 @@
+menu "ESP32 Tool Protocol"
+
+    config PROTOCOL_SERIAL_DEBUG
+        bool "Serial debug"
+        default n
+        help
+            Enable serial debug for the protocol.
+
+    if PROTOCOL_SERIAL_DEBUG
+        config PROTOCOL_SERIAL_DEBUG_UART_PORT
+            int "Serial debug uart port"
+            default 1
+            help
+                The uart port for the serial debug.
+
+        config PROTOCOL_SERIAL_DEBUG_I2C_PORT
+            int "Serial debug i2c port"
+            default 0
+            help
+                The i2c port for the serial debug.
+
+        config PROTOCOL_SERIAL_DEBUG_SPI_PORT
+            int "Serial debug spi port"
+            default 2
+            help
+                The spi port for the serial debug.
+                0 for SPI
+                1 for HSPI
+                2 for VSPI
+    endif
+
+    config PROTOCOL_PIN1_IO
+        int "pin1 io"
+        default -1
+        help
+            The gpio connected to the pin1 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+
+    config PROTOCOL_PIN2_IO
+        int "pin2 io"
+        default -1
+        help
+            The gpio connected to the pin2 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+
+    config PROTOCOL_PIN3_IO
+        int "pin3 io"
+        default -1
+        help
+            The gpio connected to the pin3 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+    
+    config PROTOCOL_PIN4_IO
+        int "pin4 io"
+        default -1
+        help
+            The gpio connected to the pin4 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+
+    config PROTOCOL_PIN5_IO
+        int "pin5 io"
+        default -1
+        help
+            The gpio connected to the pin5 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+
+    config PROTOCOL_PIN6_IO
+        int "pin6 io"
+        default -1
+        help
+            The gpio connected to the pin6 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+    
+    config PROTOCOL_PIN7_IO
+        int "pin7 io"
+        default -1
+        help
+            The gpio connected to the pin7 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+
+    config PROTOCOL_PIN8_IO
+        int "pin8 io"
+        default -1
+        help
+            The gpio connected to the pin8 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+
+    config PROTOCOL_PIN9_IO
+        int "pin9 io"
+        default -1
+        help
+            The gpio connected to the pin9 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+
+    config PROTOCOL_PIN10_IO
+        int "pin10 io"
+        default -1
+        help
+            The gpio connected to the pin10 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+
+    config PROTOCOL_PIN11_IO
+        int "pin11 io"
+        default -1
+        help
+            The gpio connected to the pin11 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+
+    config PROTOCOL_PIN12_IO
+        int "pin12 io"
+        default -1
+        help
+            The gpio connected to the pin12 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+
+    config PROTOCOL_PIN13_IO
+        int "pin13 io"
+        default -1
+        help
+            The gpio connected to the pin13 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+
+    config PROTOCOL_PIN14_IO
+        int "pin14 io"
+        default -1
+        help
+            The gpio connected to the pin14 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+
+    config PROTOCOL_PIN15_IO
+        int "pin15 io"
+        default -1
+        help
+            The gpio connected to the pin15 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+
+    config PROTOCOL_PIN16_IO
+        int "pin16 io"
+        default -1
+        help
+            The gpio connected to the pin16 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+
+    config PROTOCOL_PIN17_IO
+        int "pin17 io"
+        default -1
+        help
+            The gpio connected to the pin17 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+
+    config PROTOCOL_PIN18_IO
+        int "pin18 io"
+        default -1
+        help
+            The gpio connected to the pin18 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+
+    config PROTOCOL_PIN19_IO
+        int "pin19 io"
+        default -1
+        help
+            The gpio connected to the pin19 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+
+    config PROTOCOL_PIN20_IO
+        int "pin20 io"
+        default -1
+        help
+            The gpio connected to the pin20 of the protocol.
+            -1 for not connected.
+            -2 for VCC
+            -3 for GND
+            -4 for analog input +
+            -5 for analog input -
+
+endmenu

@@ -97,8 +97,6 @@ static const char *TAG = "test";
 
 static lv_obj_t *screen = NULL;
 
-static RtAppErr test_stop(void);
-
 static void test_global_event_cb(lv_event_t *event)
 {
     lv_event_code_t code = lv_event_get_code(event);
@@ -106,7 +104,7 @@ static void test_global_event_cb(lv_event_t *event)
     if (code == LV_EVENT_GESTURE) {
         lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_active());
         if (dir == LV_DIR_RIGHT) {
-            test_stop();
+            rtamTerminate("test");
             lv_indev_wait_release(lv_indev_active());
         }
     }

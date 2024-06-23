@@ -126,8 +126,8 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait)
         goto exit;
     }
 
-    shellPrint(shell, "%-12s %-8s %s\n", "Task", "Run Time", "Percentage");
-    shellPrint(shell, "%-12s %-8s %s\n", "----", "------", "----");
+    shellPrint(shell, "%-16s %-8s %-10s %s\n", "Task", "Run Time", "Percentage", "Core");
+    shellPrint(shell, "%-16s %-8s %-10s %s\n", "----", "------", "----", "----");
     //Match each task in start_array to those in the end_array
     for (int i = 0; i < start_array_size; i++) {
         int k = -1;
@@ -144,7 +144,8 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait)
         if (k >= 0) {
             uint32_t task_elapsed_time = end_array[k].ulRunTimeCounter - start_array[i].ulRunTimeCounter;
             uint32_t percentage_time = (task_elapsed_time * 100UL) / (total_elapsed_time * portNUM_PROCESSORS);
-            shellPrint(shell, "%-12s %-8"PRIu32" %"PRIu32"%%\n", start_array[i].pcTaskName, task_elapsed_time, percentage_time);
+            shellPrint(shell, "%-16s %-8"PRIu32" %-10"PRIu32"%% %"PRIu32"\n",
+                       start_array[i].pcTaskName, task_elapsed_time, percentage_time, start_array[i].xCoreID);
         }
     }
 
@@ -168,3 +169,10 @@ exit:    //Common return path
 }
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC)|SHELL_CMD_PARAM_NUM(1),
 ps, print_real_time_stats, print task stats);
+
+static void intr_dump(void)
+{
+    esp_intr_dump(NULL);
+}
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC)|SHELL_CMD_PARAM_NUM(1),
+intr, intr_dump, dump interrupt information);

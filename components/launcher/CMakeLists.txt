@@ -15,6 +15,7 @@ idf_component_register(
         lvgl
         rtam
         gui
+        cpost
 )
 
 target_link_libraries(

@@ -11,6 +11,7 @@
 #include "core/lv_obj_style.h"
 #include "core/lv_obj_style_gen.h"
 #include "display/lv_display.h"
+#include "esp_intr_alloc.h"
 #include "esp_system.h"
 #include "esp_log.h"
 #include "font/lv_font.h"
@@ -83,19 +84,6 @@ static lv_obj_t* serial_debug_create_pin_map_screen(void)
     lv_obj_add_event_cb(scr, serial_debug_global_event_cb, LV_EVENT_PRESSED, NULL);
     lv_obj_add_event_cb(scr, serial_debug_global_event_cb, LV_EVENT_RELEASED, NULL);
 
-    protocol_reset_pin_map();
-    protocol_set_pin_map(42, "CS", lv_palette_main(LV_PALETTE_GREEN));
-    protocol_set_pin_map(41, "MCLK", lv_palette_main(LV_PALETTE_GREEN));
-    protocol_set_pin_map(40, "MOSI", lv_palette_main(LV_PALETTE_GREEN));
-    protocol_set_pin_map(39, "MISO", lv_palette_main(LV_PALETTE_GREEN));
-    protocol_set_pin_map(38, "MIO2", lv_palette_main(LV_PALETTE_GREEN));
-    protocol_set_pin_map(48, "MIO3", lv_palette_main(LV_PALETTE_GREEN));
-    protocol_set_pin_map(47, "SCL", lv_palette_main(LV_PALETTE_CYAN));
-    protocol_set_pin_map(21, "SDA", lv_palette_main(LV_PALETTE_CYAN));
-    protocol_set_pin_map(12, "TX1", lv_palette_main(LV_PALETTE_BLUE));
-    protocol_set_pin_map(11, "RX1", lv_palette_main(LV_PALETTE_BLUE));
-    protocol_set_pin_map(10, "RTS1", lv_palette_main(LV_PALETTE_BLUE));
-    protocol_set_pin_map(9, "CTS1", lv_palette_main(LV_PALETTE_BLUE));
     lv_obj_t *pin_map = protocol_create_pin_map(scr);
     
     lv_obj_center(pin_map);
@@ -174,12 +162,20 @@ static RtAppErr serial_debug_suspend(void)
 
 static RtAppErr serial_debug_init(void)
 {
-    serial_debug_uart_init(12, 11, 10, 9);
-    serial_debug_i2c_init(21, 47);
-    serial_debug_spi_init(42, 41, 40, 39, 38, 48);
+    protocol_reset_pin();
+#if CONFIG_PROTOCOL_PIN20_IO == 43 /** old hardware */
+    serial_debug_uart_init(15, 13, 11, 9);
+    serial_debug_i2c_init(17, 19);
+    serial_debug_spi_init(16, 14, 12, 10, 8, 3);
+#else
+    serial_debug_uart_init(9, 7, 5, 3);
+    serial_debug_i2c_init(15, 17);
+    serial_debug_spi_init(18, 16, 14, 12, 10, 8);
+#endif
     return RTAM_OK;
 }
 
+#if CONFIG_PROTOCOL_SERIAL_DEBUG == 1
 static RtAppErr serial_debug_stop(void)
 {
     serial_debug_uart_deinit();
@@ -210,3 +206,4 @@ static const RtamInfo serial_debug_info = {
 };
 
 RTAPP_EXPORT(serial_debug, &interface, RTAPP_FLAG_BACKGROUND, &dependencies, &serial_debug_info);
+#endif
