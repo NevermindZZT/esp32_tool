@@ -6,6 +6,8 @@ idf_component_register(
         "serial_debug_uart.c"
         "serial_debug_i2c.c"
         "serial_debug_spi.c"
+        "pwm.c"
+        "icon_app_pwm.c"
 
     INCLUDE_DIRS
         "./"
@@ -28,6 +30,8 @@ target_link_libraries(
         "-u shellCommanduartd"
         "-u shellCommandi2cd"
         "-u shellCommandspid"
+        "-u rtApppwm"
+        "-u shellCommandpwm"
 )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-missing-braces)
