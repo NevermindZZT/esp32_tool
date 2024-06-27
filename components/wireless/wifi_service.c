@@ -15,11 +15,14 @@
 #include "esp_idf_version.h"
 #include "esp_log.h"
 #include "esp_netif.h"
+#include "esp_netif_sntp.h"
 #include "esp_smartconfig.h"
 #include "esp_mac.h"
+#include "esp_wifi_types.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "shell.h"
+#include "shell_cmd_group.h"
 #include "rtam.h"
  
 static const char *TAG = "wifi_service";
@@ -36,6 +39,8 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         esp_wifi_connect();
         xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED) {
+        esp_netif_sntp_start();
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);
     } else if (event_base == SC_EVENT && event_id == SC_EVENT_SCAN_DONE) {
@@ -84,6 +89,22 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
+static ShellCommand wifi_cmd_group[] = {
+    SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, connect, esp_wifi_connect, connect to ap),
+    SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, disconnect, esp_wifi_disconnect, disconnect to ap),
+    // {.attr.value = 0},
+    SHELL_CMD_GROUP_END()
+};
+SHELL_EXPORT_CMD_GROUP(
+SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN)|SHELL_CMD_DISABLE_RETURN,
+wifi, wifi_cmd_group, wifi service command group);
+
+static void wifi_ntp_init(void)
+{
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
+    ESP_ERROR_CHECK(esp_netif_sntp_init(&config));
+}
+
 static RtAppErr wifi_service_init(void)
 {
     ESP_ERROR_CHECK(esp_netif_init());
@@ -101,6 +122,10 @@ static RtAppErr wifi_service_init(void)
 
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK( esp_wifi_start() );
+
+    esp_wifi_connect();
+
+    wifi_ntp_init();
 
     return RTAM_OK;
 }

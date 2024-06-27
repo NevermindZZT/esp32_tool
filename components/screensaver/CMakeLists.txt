@@ -1,8 +1,6 @@
 idf_component_register(
     SRCS
-        "wifi_service.c"
-        "smartconfig.c"
-        "icon_app_smartconfig.c"
+        "screensaver.c"
 
     INCLUDE_DIRS "./"
 
@@ -20,7 +18,5 @@ target_link_libraries(
     ${COMPONENT_LIB}
     
     INTERFACE
-        "-u rtAppsmartconfig"
-        "-u rtAppwifi_service"
-        "-u shellCommandwifi"
+        "-u rtAppscreensaver"
 )

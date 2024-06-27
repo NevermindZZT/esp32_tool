@@ -109,7 +109,7 @@ static RtAppErr key_init(void)
     }
 
     gpio_evt_queue = xQueueCreate(10, sizeof(uint32_t));
-    xTaskCreate(key_task, "key_task", 2048, NULL, 10, NULL);
+    xTaskCreate(key_task, "key_task", 8192, NULL, 10, NULL);
     return RTAM_OK;
 }
 

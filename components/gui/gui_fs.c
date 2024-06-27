@@ -62,7 +62,7 @@ void gui_fs_init(void)
     lv_fs_drv_init(&drv);
 
     drv.letter = 'S';
-    drv.cache_size = 0;
+    drv.cache_size = 32768;
 
     drv.ready_cb = lv_ready_cb;
     drv.open_cb = lv_open_cb;

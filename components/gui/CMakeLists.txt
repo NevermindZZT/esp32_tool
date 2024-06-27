@@ -15,6 +15,7 @@ idf_component_register(
         storage
         key
         battery
+        fatfs
 )
 
 target_compile_options(${COMPONENT_LIB}

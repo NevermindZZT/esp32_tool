@@ -32,6 +32,8 @@
 #include "gui.h"
 #include "key.h"
 
+#define GUI_BUFFER_SIZE 240 * 280 * 2
+
 static const char *TAG = "gui";
 
 static SemaphoreHandle_t xGuiSemaphore;
@@ -45,17 +47,18 @@ lv_font_t *source_han_sans_24 = NULL;
 static void power_key_press_callback(int key, enum key_action action)
 {
     if (action == KEY_ACTION_SHORT_PRESS) {
-        if (display_on) {
-            disp_set_on(0);
-            lvgl_set_backlight(0);
-            display_on = false;
-            gui_lock();
-        } else {
-            disp_set_on(1);
-            lvgl_set_backlight(100);
-            display_on = true;
-            gui_unlock();
-        }
+        // if (display_on) {
+        //     disp_set_on(0);
+        //     lvgl_set_backlight(0);
+        //     display_on = false;
+        //     gui_lock();
+        // } else {
+        //     disp_set_on(1);
+        //     lvgl_set_backlight(100);
+        //     display_on = true;
+        //     gui_unlock();
+        // }
+        rtamLaunch("screensaver");
     }
 }
 
@@ -172,9 +175,9 @@ static void gui_task(void *param)
     lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
     lv_indev_set_read_cb(indev, touch_driver_read);
 
-    void *buf1 = heap_caps_malloc(DISP_BUF_SIZE * 2, MALLOC_CAP_DMA);
-    void *buf2 = heap_caps_malloc(DISP_BUF_SIZE * 2, MALLOC_CAP_DMA);
-    lv_display_set_buffers(display, buf1, buf2, DISP_BUF_SIZE * 2, LV_DISPLAY_RENDER_MODE_PARTIAL);
+    void *buf1 = heap_caps_malloc(GUI_BUFFER_SIZE, MALLOC_CAP_DEFAULT);
+    void *buf2 = heap_caps_malloc(GUI_BUFFER_SIZE, MALLOC_CAP_DEFAULT);
+    lv_display_set_buffers(display, buf1, buf2, GUI_BUFFER_SIZE, LV_DISPLAY_RENDER_MODE_PARTIAL);
 
     const esp_timer_create_args_t periodic_timer_args = {
 		.callback = &lv_tick_task,
@@ -188,7 +191,7 @@ static void gui_task(void *param)
 
     if (pdTRUE == gui_lock()) {
         lv_timer_handler();
-    rtamSetStatus("gui", RTAPP_STATUS_STARTED, 1);
+        rtamSetStatus("gui", RTAPP_STATUS_STARTED, 1);
         gui_unlock();
     }
     vTaskDelay(pdMS_TO_TICKS(10));
@@ -206,7 +209,7 @@ static void gui_task(void *param)
 
 static RtAppErr gui_init(void)
 {
-    xTaskCreatePinnedToCore(gui_task, "guiTask", 8192, NULL, 8, NULL, 0);
+    xTaskCreatePinnedToCore(gui_task, "guiTask", 8192, NULL, 8, NULL, 1);
     return RTAM_PROCESSING;
 }
 
