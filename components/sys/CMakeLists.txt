@@ -20,4 +20,5 @@ target_link_libraries(
         "-u shellCommandsysInfo"
         "-u shellCommandps"
         "-u shellCommandintr"
+        "-u shellCommandgpio"
 )

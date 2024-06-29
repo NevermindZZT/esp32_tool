@@ -1,0 +1,31 @@
+menu "ESP32 Tool Key"
+    
+    config KEY_POWER_PIN
+        int "Power Key Pin"
+        default 10
+        help
+          Power Key Pin
+
+    if KEY_POWER_PIN != -1
+        config KEY_POWER_PIN_INVERT
+            bool "Invert Power Key Pin"
+            default n
+            help
+              Invert Power Key Pin
+    endif
+
+    config KEY_BOOT_PIN
+        int "Boot Key Pin"
+        default 0
+        help
+          Boot Key Pin
+    
+    if KEY_BOOT_PIN != -1
+        config KEY_BOOT_PIN_INVERT
+            bool "Invert Boot Key Pin"
+            default n
+            help
+              Invert Boot Key Pin
+    endif
+
+endmenu

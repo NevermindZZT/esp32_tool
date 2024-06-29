@@ -9,14 +9,17 @@
  * 
  */
 
+#include "driver/gpio.h"
 #include "esp_system.h"
 #include "esp_idf_version.h"
 #include "esp_flash.h"
 #include "esp_log.h"
 #include "esp_chip_info.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/projdefs.h"
 #include "freertos/task.h"
 #include "shell.h"
+#include "shell_cmd_group.h"
 #include <time.h>
 #include "sys/time.h"
 
@@ -196,3 +199,25 @@ static void get_time(void)
 }
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC),
 time, get_time, get time);
+
+static void gpio_detect(int gpio, int time)
+{
+    while (time--) {
+        ESP_LOGI(TAG, "GPIO[%d] level: %d", gpio, gpio_get_level(gpio));
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+}
+
+static ShellCommand gpio_cmd_group[] =
+{
+    SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, get, gpio_get_level, 
+        get gpio level\r\ngpio get [gpio]\r\n),
+    SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, set, gpio_set_level,
+        set gpio level\r\ngpio set [gpio] [level]\r\n),
+    SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, detect, gpio_detect,
+        detect gpio level\r\ngpio detect [gpio]\r\n),
+    SHELL_CMD_GROUP_END()
+};
+SHELL_EXPORT_CMD_GROUP(
+SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN)|SHELL_CMD_DISABLE_RETURN,
+gpio, gpio_cmd_group, gpio tool);

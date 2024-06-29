@@ -12,6 +12,7 @@ idf_component_register(
         launcher
         gui
         shell
+        key
 )
 
 target_link_libraries(

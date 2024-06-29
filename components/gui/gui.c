@@ -44,22 +44,27 @@ static bool display_on = true;
 
 lv_font_t *source_han_sans_24 = NULL;
 
-static void power_key_press_callback(int key, enum key_action action)
+static int key_press_callback(enum key_code code, enum key_action action)
 {
-    if (action == KEY_ACTION_SHORT_PRESS) {
-        // if (display_on) {
-        //     disp_set_on(0);
-        //     lvgl_set_backlight(0);
-        //     display_on = false;
-        //     gui_lock();
-        // } else {
-        //     disp_set_on(1);
-        //     lvgl_set_backlight(100);
-        //     display_on = true;
-        //     gui_unlock();
-        // }
-        rtamLaunch("screensaver");
+    if (code == KEY_CODE_POWER) {
+        if (action == KEY_ACTION_SHORT_PRESS) {
+            if (rtamLaunch("screensaver") < RTAM_OK) {
+                if (display_on) {
+                    disp_set_on(0);
+                    lvgl_set_backlight(0);
+                    display_on = false;
+                    gui_lock();
+                } else {
+                    gui_unlock();
+                    disp_set_on(1);
+                    lvgl_set_backlight(100);
+                    display_on = true;
+                }
+            }
+            return 0;
+        }
     }
+    return -1;
 }
 
 #if defined(CONFIG_LV_USE_LOG)
@@ -187,7 +192,7 @@ static void gui_task(void *param)
 	ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
 	ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 10 * 1000));
 
-    key_register_callback("power", power_key_press_callback);
+    key_add_callback(KEY_CODE_POWER, key_press_callback);
 
     if (pdTRUE == gui_lock()) {
         lv_timer_handler();
