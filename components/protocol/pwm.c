@@ -304,7 +304,7 @@ static lv_obj_t* pwm_init_duty_view(int group, int index, lv_obj_t *parent)
     lv_obj_set_style_text_align(duty_cont, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN);
     lv_obj_align_to(duty_cont, duty_title, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
-    lv_obj_t *duty_slider = lv_slider_create(view);
+    lv_obj_t *duty_slider = gui_create_slider(view, LV_PALETTE_BLUE, 8);
     lv_obj_set_width(duty_slider, LV_PCT(100));
     lv_slider_set_range(duty_slider, 0, PWM_DUTY_MAX);
     lv_slider_set_value(duty_slider, 0, LV_ANIM_ON);
@@ -341,7 +341,7 @@ static void pwm_init_tab(lv_obj_t *tab, int group)
     lv_obj_set_style_text_align(freq_cont, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN);
     lv_obj_align_to(freq_cont, freq_title, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
-    lv_obj_t *freq_slider = lv_slider_create(view);
+    lv_obj_t *freq_slider = gui_create_slider(view, LV_PALETTE_BLUE, 8);
     lv_obj_set_width(freq_slider, LV_PCT(100));
     lv_slider_set_range(freq_slider, 100, 10000);
     lv_slider_set_value(freq_slider, 5000, LV_ANIM_ON);

@@ -20,6 +20,7 @@
 #include "misc/lv_area.h"
 #include "misc/lv_color.h"
 #include "misc/lv_event.h"
+#include "misc/lv_style_gen.h"
 #include "misc/lv_types.h"
 #include "battery.h"
 
@@ -146,4 +147,52 @@ lv_obj_t *gui_create_status_bar(lv_obj_t *parent, bool show_time, char *content)
 
     lv_obj_remove_flag(parent, LV_OBJ_FLAG_SCROLLABLE);
     return status_bar;
+}
+
+lv_obj_t *gui_create_slider(lv_obj_t *parent, lv_palette_t palette, int32_t radius)
+{
+    static const lv_style_prop_t props[] = {LV_STYLE_BG_COLOR, 0};
+    static lv_style_transition_dsc_t transition_dsc;
+    lv_style_transition_dsc_init(&transition_dsc, props, lv_anim_path_linear, 300, 0, NULL);
+
+    static lv_style_t style_main;
+    static lv_style_t style_indicator;
+    static lv_style_t style_knob;
+    static lv_style_t style_pressed_color;
+
+    lv_style_init(&style_main);
+    lv_style_set_bg_opa(&style_main, LV_OPA_20);
+    lv_style_set_bg_color(&style_main, lv_color_hex(0xffffff));
+    lv_style_set_radius(&style_main, radius);
+    lv_style_set_pad_ver(&style_main, 0);
+    lv_style_set_height(&style_main, 60);
+
+    lv_style_init(&style_indicator);
+    lv_style_set_bg_opa(&style_indicator, LV_OPA_COVER);
+    lv_style_set_bg_color(&style_indicator, lv_palette_main(palette));
+    lv_style_set_radius(&style_indicator, radius);
+    lv_style_set_transition(&style_indicator, &transition_dsc);
+
+    lv_style_init(&style_knob);
+    lv_style_set_bg_opa(&style_knob, LV_OPA_TRANSP);
+    lv_style_set_bg_color(&style_knob, lv_color_hex(0x000000));
+    // lv_style_set_border_color(&style_knob, lv_palette_darken(LV_PALETTE_BLUE, 3));
+    lv_style_set_border_width(&style_knob, 0);
+    lv_style_set_radius(&style_knob, radius);
+    lv_style_set_pad_all(&style_knob, 0);
+    lv_style_set_transition(&style_knob, &transition_dsc);
+
+    lv_style_init(&style_pressed_color);
+    lv_style_set_bg_color(&style_pressed_color, lv_palette_darken(palette, 2));
+
+    lv_obj_t * slider = lv_slider_create(parent);
+    lv_obj_remove_style_all(slider);
+
+    lv_obj_add_style(slider, &style_main, LV_PART_MAIN);
+    lv_obj_add_style(slider, &style_indicator, LV_PART_INDICATOR);
+    lv_obj_add_style(slider, &style_pressed_color, LV_PART_INDICATOR | LV_STATE_PRESSED);
+    lv_obj_add_style(slider, &style_knob, LV_PART_KNOB);
+    lv_obj_add_style(slider, &style_pressed_color, LV_PART_KNOB | LV_STATE_PRESSED);
+
+    return slider;
 }

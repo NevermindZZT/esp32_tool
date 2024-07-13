@@ -12,6 +12,7 @@
 #include "lvgl.h"
 #include "gui.h"
 #include "misc/lv_area.h"
+#include "misc/lv_palette.h"
 #include "misc/lv_types.h"
 #include "rtam.h"
 #include "setting.h"
@@ -64,7 +65,7 @@ lv_obj_t *setting_create_slider(lv_obj_t *parent, const void *icon, const char *
 {
     lv_obj_t * obj = setting_create_text(parent, icon, txt, LV_MENU_ITEM_BUILDER_VARIANT_2);
 
-    lv_obj_t * slider = lv_slider_create(obj);
+    lv_obj_t * slider = gui_create_slider(obj, LV_PALETTE_BLUE, 8);
     lv_obj_set_flex_grow(slider, 1);
     lv_slider_set_range(slider, min, max);
     lv_slider_set_value(slider, val, LV_ANIM_ON);
