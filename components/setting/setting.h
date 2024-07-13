@@ -30,7 +30,7 @@ extern const lv_image_dsc_t icon_app_setting_mechanice;
 extern const lv_image_dsc_t icon_app_setting_brightness;
 
 lv_obj_t *setting_get_screen(void);
-void setting_global_event_cb(lv_event_t *event);
+int setting_gesture_callback(lv_dir_t dir);
 lv_obj_t *setting_create_text(lv_obj_t *parent, const void *icon, const char *txt,
                               lv_menu_builder_variant_t builder_variant);
 lv_obj_t *setting_create_slider(lv_obj_t *parent, const void *icon, const char *txt,

@@ -6,44 +6,30 @@
  * @date 2024-05-14
  * @copyright (c) 2024 Letter All rights reserved.
  */
+#include "display/lv_display.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "lvgl.h"
 #include "gui.h"
+#include "misc/lv_area.h"
 #include "misc/lv_types.h"
 #include "rtam.h"
 #include "setting.h"
 
 static const char *tag = "setting";
 
-void setting_global_event_cb(lv_event_t *event)
+int setting_gesture_callback(lv_dir_t dir)
 {
-    static bool gesture_enabled = false;
-    lv_event_code_t code = lv_event_get_code(event);
-    lv_obj_t *obj = lv_event_get_target(event);
-
-    if (code == LV_EVENT_GESTURE) {
-        lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_active());
-        if (dir == LV_DIR_RIGHT && gesture_enabled) {
-            gesture_enabled = false;
-            if (obj == setting_get_screen()) {
-                rtamTerminate("setting");
-            } else {
-                gui_back();
-            }
-            lv_indev_wait_release(lv_indev_active());
+    if (dir == LV_DIR_RIGHT) {
+        if (lv_screen_active() == setting_get_screen()) {
+            rtamTerminate("setting");
+        } else {
+            gui_back();
         }
-    } else if (code == LV_EVENT_PRESSED) {
-        lv_point_t point;
-        lv_indev_get_point(lv_indev_active(), &point);
-        if (point.x < 16) {
-            gesture_enabled = true;
-        }
-    } else if (code == LV_EVENT_RELEASED) {
-        gesture_enabled = false;
+        return 0;
     }
+    return -1;
 }
-
 
 lv_obj_t *setting_create_text(lv_obj_t *parent, const void *icon, const char *txt,
                               lv_menu_builder_variant_t builder_variant)

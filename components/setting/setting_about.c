@@ -11,6 +11,7 @@
 #include "esp_chip_info.h"
 #include "esp_flash.h"
 #include "freertos/FreeRTOS.h"
+#include "gui.h"
 #include "lvgl.h"
 #include "setting.h"
 #include "battery.h"
@@ -19,9 +20,6 @@ lv_obj_t *setting_create_about(void)
 {
     lv_obj_t *screen = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(screen, lv_color_hex(0x000000), LV_PART_MAIN);
-    lv_obj_add_event_cb(screen, setting_global_event_cb, LV_EVENT_GESTURE, NULL);
-    lv_obj_add_event_cb(screen, setting_global_event_cb, LV_EVENT_PRESSED, NULL);
-    lv_obj_add_event_cb(screen, setting_global_event_cb, LV_EVENT_RELEASED, NULL);
 
     lv_obj_t *menu = lv_menu_create(screen);
     lv_obj_set_size(menu, lv_display_get_horizontal_resolution(NULL), lv_display_get_vertical_resolution(NULL));

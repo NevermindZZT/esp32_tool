@@ -23,6 +23,7 @@
 #include "misc/lv_area.h"
 #include "misc/lv_color.h"
 #include "misc/lv_event.h"
+#include "misc/lv_palette.h"
 #include "misc/lv_text.h"
 #include "protocol_common.h"
 #include "rtam.h"
@@ -48,6 +49,7 @@ struct pwm_group {
     struct {
         ledc_channel_t channel;
         int pin;
+        const char *name;
         lv_obj_t *duty_content;
         lv_obj_t *duty_slider;
     } pwm_cfg[PWM_GROUP_CHANNEL_NUM];
@@ -57,17 +59,17 @@ struct pwm_group pwm_group[PWM_GROUP_NUM] = {
     {
         .timer = 1,
         .pwm_cfg = {
-            {LEDC_CHANNEL_1, 16},
-            {LEDC_CHANNEL_2, 14},
-            {LEDC_CHANNEL_3, 12},
+            {LEDC_CHANNEL_1, 18, "P0-0"},
+            {LEDC_CHANNEL_2, 16, "P0-1"},
+            {LEDC_CHANNEL_3, 14, "P0-2"},
         }
     },
     {
         .timer = 2,
         .pwm_cfg = {
-            {LEDC_CHANNEL_1, 15},
-            {LEDC_CHANNEL_2, 13},
-            {LEDC_CHANNEL_3, 11},
+            {LEDC_CHANNEL_1, 12, "P1-0"},
+            {LEDC_CHANNEL_2, 10, "P1-1"},
+            {LEDC_CHANNEL_3, 8, "P1-2"},
         }
     }
 };
@@ -79,41 +81,42 @@ static lv_obj_t *screen = NULL;
 static lv_obj_t* pwm_get_screen(void);
 static int pwm_set_freq(int group, int freq);
 static int pwm_set_duty(int group, int index, int duty);
+static lv_obj_t* pwm_create_pin_map_screen(void);
 
-void pwm_global_event_cb(lv_event_t *event)
+static int pwm_gesture_callback(lv_dir_t dir)
 {
-    // static bool gesture_enabled = false;
-    lv_event_code_t code = lv_event_get_code(event);
-    lv_obj_t *obj = lv_event_get_target(event);
-
-    if (code == LV_EVENT_GESTURE) {
-        lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_active());
-        if (dir == LV_DIR_RIGHT /*&& gesture_enabled*/) {
-            // gesture_enabled = false;
-            if (obj == pwm_get_screen()) {
-                rtamTerminate("pwm");
-            } else {
-                gui_back();
-            }
-            lv_indev_wait_release(lv_indev_active());
-        } else if (dir == LV_DIR_BOTTOM) {
-            if (obj == pwm_get_screen()) {
-                // gui_push_screen(serial_debug_create_pin_map_screen(), LV_SCR_LOAD_ANIM_MOVE_BOTTOM);
-            }
-        } else if (dir == LV_DIR_TOP) {
-            if (obj != pwm_get_screen()) {
-                // gui_pop_screen(LV_SCR_LOAD_ANIM_MOVE_TOP);
-            }
+    if (dir == LV_DIR_RIGHT) {
+        if (lv_screen_active() == pwm_get_screen()) {
+            rtamTerminate("pwm");
+        } else {
+            gui_back();
         }
-    } else if (code == LV_EVENT_PRESSED) {
-        // lv_point_t point;
-        // lv_indev_get_point(lv_indev_active(), &point);
-        // if (point.x < 16) {
-        //     gesture_enabled = true;
-        // }
-    } else if (code == LV_EVENT_RELEASED) {
-        // gesture_enabled = false;
+        return 0;
+    } else if (dir == LV_DIR_BOTTOM) {
+        if (lv_screen_active() == pwm_get_screen()) {
+            gui_push_screen(pwm_create_pin_map_screen(), LV_SCR_LOAD_ANIM_MOVE_BOTTOM);
+        }
+        return 0;
+    } else if (dir == LV_DIR_TOP) {
+        if (lv_screen_active() != pwm_get_screen()) {
+            gui_pop_screen(LV_SCR_LOAD_ANIM_MOVE_TOP);
+        }
+        return 0;
     }
+    return -1;
+}
+
+
+static lv_obj_t* pwm_create_pin_map_screen(void)
+{
+    lv_obj_t *scr = lv_obj_create(NULL);
+    lv_obj_set_style_bg_color(scr, lv_color_hex(0x000000), LV_PART_MAIN);
+
+    lv_obj_t *pin_map = protocol_create_pin_map(scr);
+    
+    lv_obj_center(pin_map);
+
+    return scr;
 }
 
 void pwm_slider_event_cb(lv_event_t *event)
@@ -164,6 +167,7 @@ static esp_err_t pwm_init_channel(int group_id, int index)
         .hpoint = 0,
     };
     esp_err_t ret = ledc_channel_config(&ledc_conf);
+    protocol_set_pin(pwm_group[group_id].pwm_cfg[index].pin, pwm_group[group_id].pwm_cfg[index].name, lv_palette_main(LV_PALETTE_BLUE));
     // esp_rom_gpio_connect_out_signal(io,
     //                                 ledc_periph_signal[LEDC_LOW_SPEED_MODE].sig_out0_idx + pwm_cfgs[index].channel,
     //                                 0,
@@ -360,9 +364,7 @@ static void pwm_init_screen(void)
 {
     lv_obj_t *scr = pwm_get_screen();
 
-    lv_obj_add_event_cb(scr, pwm_global_event_cb, LV_EVENT_GESTURE, NULL);
-    lv_obj_add_event_cb(scr, pwm_global_event_cb, LV_EVENT_PRESSED, NULL);
-    lv_obj_add_event_cb(scr, pwm_global_event_cb, LV_EVENT_RELEASED, NULL);
+    gui_set_global_gesture_callback(pwm_gesture_callback);
 
     lv_obj_t *tabview = lv_tabview_create(scr);
     lv_obj_set_size(tabview, 
@@ -400,6 +402,7 @@ static RtAppErr pwm_resume(void)
 
 static RtAppErr pwm_init(void)
 {
+    protocol_reset_pin();
     for (int i = 0; i < PWM_GROUP_NUM; i++)
     {
         pwm_init_group(i);

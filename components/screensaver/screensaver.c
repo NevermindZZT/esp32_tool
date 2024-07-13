@@ -53,31 +53,17 @@ static int key_press_callback(enum key_code code, enum key_action action)
     return -1;
 }
 
-void screensaver_global_event_cb(lv_event_t *event)
+static int screensaver_gesture_callback(lv_dir_t dir)
 {
-    // static bool gesture_enabled = false;
-    lv_event_code_t code = lv_event_get_code(event);
-    lv_obj_t *obj = lv_event_get_target(event);
-
-    if (code == LV_EVENT_GESTURE) {
-        lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_active());
-        if (dir == LV_DIR_RIGHT/* && gesture_enabled*/) {
-            // gesture_enabled = false;
-            if (obj == screensaver_get_screen()) {
-                // gui_back();
-                rtamTerminate("screensaver");
-            }
-            lv_indev_wait_release(lv_indev_active());
+    if (dir == LV_DIR_RIGHT) {
+        if (lv_screen_active() == screensaver_get_screen()) {
+            rtamTerminate("screensaver");
+        } else {
+            gui_back();
         }
-    } else if (code == LV_EVENT_PRESSED) {
-        // lv_point_t point;
-        // lv_indev_get_point(lv_indev_active(), &point);
-        // if (point.x < 16) {
-        //     gesture_enabled = true;
-        // }
-    } else if (code == LV_EVENT_RELEASED) {
-        // gesture_enabled = false;
+        return 0;
     }
+    return -1;
 }
 
 static void screensaver_update(void)
@@ -111,9 +97,7 @@ static void screensaver_init_screen(void)
 {
     gui_lock();
     lv_obj_t *scr = screensaver_get_screen();
-    lv_obj_add_event_cb(scr, screensaver_global_event_cb, LV_EVENT_GESTURE, NULL);
-    lv_obj_add_event_cb(scr, screensaver_global_event_cb, LV_EVENT_PRESSED, NULL);
-    lv_obj_add_event_cb(scr, screensaver_global_event_cb, LV_EVENT_RELEASED, NULL);
+    gui_set_global_gesture_callback(screensaver_gesture_callback);
 
     lv_obj_t *background = lv_img_create(scr);
     lv_img_set_src(background, "S:/spiflash/data/wallpaper.jpg");

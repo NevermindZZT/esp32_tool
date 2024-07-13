@@ -16,6 +16,7 @@
 #include "esp_log.h"
 #include "font/lv_symbol_def.h"
 #include "freertos/projdefs.h"
+#include "misc/lv_area.h"
 #include "misc/lv_event.h"
 #include "misc/lv_types.h"
 #include "rtam_cfg_user.h"
@@ -97,17 +98,13 @@ static const char *TAG = "test";
 
 static lv_obj_t *screen = NULL;
 
-static void test_global_event_cb(lv_event_t *event)
+static int test_gesture_callback(lv_dir_t dir)
 {
-    lv_event_code_t code = lv_event_get_code(event);
-
-    if (code == LV_EVENT_GESTURE) {
-        lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_active());
-        if (dir == LV_DIR_RIGHT) {
-            rtamTerminate("test");
-            lv_indev_wait_release(lv_indev_active());
-        }
+    if (dir == LV_DIR_RIGHT) {
+        rtamTerminate("test");
+        return 0;
     }
+    return -1;
 }
 
 static lv_obj_t *test_get_screen(void)
@@ -123,7 +120,8 @@ static lv_obj_t *test_get_screen(void)
 static void test_init_screen(void)
 {
     lv_obj_t *scr = test_get_screen();
-    lv_obj_add_event_cb(scr, test_global_event_cb, LV_EVENT_GESTURE, NULL);
+
+    gui_set_global_gesture_callback(test_gesture_callback);
 
     lv_example_slider_1();
 }
@@ -142,6 +140,7 @@ static RtAppErr test_init(void)
 
 static RtAppErr test_stop(void)
 {
+    gui_set_global_gesture_callback(NULL);
     launcher_go_home(LV_SCR_LOAD_ANIM_MOVE_RIGHT, true);
     screen = NULL;
     return RTAM_OK;

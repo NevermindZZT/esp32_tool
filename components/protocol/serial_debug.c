@@ -17,6 +17,7 @@
 #include "font/lv_font.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "indev/lv_indev.h"
 #include "layouts/lv_layout.h"
 #include "lvgl.h"
 #include "gui.h"
@@ -39,50 +40,33 @@ static lv_obj_t *screen = NULL;
 static lv_obj_t* serial_debug_create_pin_map_screen(void);
 static lv_obj_t* serial_debug_get_screen(void);
 
-void serial_debug_global_event_cb(lv_event_t *event)
+static int serial_debug_gesture_callback(lv_dir_t dir)
 {
-    // static bool gesture_enabled = false;
-    lv_event_code_t code = lv_event_get_code(event);
-    lv_obj_t *obj = lv_event_get_target(event);
-
-    if (code == LV_EVENT_GESTURE) {
-        lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_active());
-        if (dir == LV_DIR_RIGHT /*&& gesture_enabled*/) {
-            // gesture_enabled = false;
-            if (obj == serial_debug_get_screen()) {
-                rtamExit("serial_debug");
-            } else {
-                gui_back();
-            }
-            lv_indev_wait_release(lv_indev_active());
-        } else if (dir == LV_DIR_BOTTOM) {
-            if (obj == serial_debug_get_screen()) {
-                gui_push_screen(serial_debug_create_pin_map_screen(), LV_SCR_LOAD_ANIM_MOVE_BOTTOM);
-            }
-        } else if (dir == LV_DIR_TOP) {
-            if (obj != serial_debug_get_screen()) {
-                gui_pop_screen(LV_SCR_LOAD_ANIM_MOVE_TOP);
-            }
+    if (dir == LV_DIR_RIGHT) {
+        if (lv_screen_active() == serial_debug_get_screen()) {
+            rtamTerminate("serial_debug");
+        } else {
+            gui_back();
         }
-    } else if (code == LV_EVENT_PRESSED) {
-        // lv_point_t point;
-        // lv_indev_get_point(lv_indev_active(), &point);
-        // if (point.x < 16) {
-        //     gesture_enabled = true;
-        // }
-    } else if (code == LV_EVENT_RELEASED) {
-        // gesture_enabled = false;
+        return 0;
+    } else if (dir == LV_DIR_BOTTOM) {
+        if (lv_screen_active() == serial_debug_get_screen()) {
+            gui_push_screen(serial_debug_create_pin_map_screen(), LV_SCR_LOAD_ANIM_MOVE_BOTTOM);
+        }
+        return 0;
+    } else if (dir == LV_DIR_TOP) {
+        if (lv_screen_active() != serial_debug_get_screen()) {
+            gui_pop_screen(LV_SCR_LOAD_ANIM_MOVE_TOP);
+        }
+        return 0;
     }
+    return -1;
 }
 
 static lv_obj_t* serial_debug_create_pin_map_screen(void)
 {
     lv_obj_t *scr = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(scr, lv_color_hex(0x000000), LV_PART_MAIN);
-
-    lv_obj_add_event_cb(scr, serial_debug_global_event_cb, LV_EVENT_GESTURE, NULL);
-    lv_obj_add_event_cb(scr, serial_debug_global_event_cb, LV_EVENT_PRESSED, NULL);
-    lv_obj_add_event_cb(scr, serial_debug_global_event_cb, LV_EVENT_RELEASED, NULL);
 
     lv_obj_t *pin_map = protocol_create_pin_map(scr);
     
@@ -105,9 +89,7 @@ static void serial_debug_init_screen(void)
 {
     lv_obj_t *scr = serial_debug_get_screen();
 
-    lv_obj_add_event_cb(scr, serial_debug_global_event_cb, LV_EVENT_GESTURE, NULL);
-    lv_obj_add_event_cb(scr, serial_debug_global_event_cb, LV_EVENT_PRESSED, NULL);
-    lv_obj_add_event_cb(scr, serial_debug_global_event_cb, LV_EVENT_RELEASED, NULL);
+    gui_set_global_gesture_callback(serial_debug_gesture_callback);
 
     lv_obj_t *title = lv_label_create(scr);
     lv_label_set_text(title, "Serial Debug");
@@ -155,6 +137,7 @@ static RtAppErr serial_debug_suspend(void)
     serial_debug_i2c_deinit_info();
     serial_debug_spi_deinit_info();
 
+    gui_set_global_gesture_callback(NULL);
     launcher_go_home(LV_SCR_LOAD_ANIM_MOVE_RIGHT, true);
     screen = NULL;
     return RTAM_OK;

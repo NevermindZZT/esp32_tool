@@ -28,6 +28,7 @@
 #include "lvgl_helpers.h"
 #include "rtam.h"
 #include "shell.h"
+#include "shell_cmd_group.h"
 #include <stdint.h>
 #include "gui.h"
 #include "key.h"
@@ -206,11 +207,24 @@ static void gui_task(void *param)
         if (pdTRUE == gui_lock()) {
             lv_timer_handler();
             gui_unlock();
+            gui_global_gesture_handler(indev);
         }
         
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
+
+static ShellCommand gui_cmd_group[] = {
+    SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, lock, gui_lock, lock gui),
+    SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, unlock, gui_unlock, unlock gui),
+    SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, backlight, lvgl_set_backlight,
+        set backlight level\r\nbacklight [level]),
+    SHELL_CMD_GROUP_END()
+};
+SHELL_EXPORT_CMD_GROUP(
+SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN)|SHELL_CMD_DISABLE_RETURN,
+gui, gui_cmd_group, gui group);
+
 
 static RtAppErr gui_init(void)
 {

@@ -11,15 +11,73 @@
 #include "core/lv_obj_pos.h"
 #include "core/lv_obj_scroll.h"
 #include "core/lv_obj_style_gen.h"
+#include "esp_log.h"
 #include "font/lv_symbol_def.h"
 #include "freertos/FreeRTOS.h"
 #include "gui.h"
+#include "indev/lv_indev.h"
 #include "lvgl.h"
 #include "misc/lv_area.h"
 #include "misc/lv_color.h"
+#include "misc/lv_event.h"
 #include "misc/lv_types.h"
 #include "battery.h"
 
+static const char *TAG = "gui_common";
+
+static int (*gui_global_gesture_callback)(lv_dir_t dir) = NULL;
+
+void gui_global_gesture_handler(lv_indev_t *indev)
+{
+    static int32_t x_start = 0;
+    static int32_t y_start = 0;
+    static uint32_t start_time = 0;
+    static lv_indev_state_t last_state = LV_INDEV_STATE_RELEASED;
+
+    lv_point_t point;
+    lv_indev_get_point(indev, &point);
+    lv_indev_state_t state = lv_indev_get_state(indev);
+
+    int32_t screen_width = lv_display_get_horizontal_resolution(NULL);
+    int32_t screen_height = lv_display_get_vertical_resolution(NULL);
+
+    if (last_state == LV_INDEV_STATE_RELEASED && state == LV_INDEV_STATE_PRESSED) {
+        x_start = point.x;
+        y_start = point.y;
+        start_time = esp_log_timestamp();
+        // ESP_LOGI(TAG, "Gesture start: %d, %d", (int)x_start, (int)y_start);
+    } else if (last_state == LV_INDEV_STATE_PRESSED && state == LV_INDEV_STATE_RELEASED) {
+        if (esp_log_timestamp() - start_time < 400) {
+            lv_dir_t dir = LV_DIR_NONE;
+            if (x_start < screen_width / 8
+                && point.x - x_start > screen_width / 4) {
+                dir = LV_DIR_RIGHT;
+            } else if (screen_width - x_start < screen_width / 8
+                && x_start - point.x > screen_width / 4) {
+                dir = LV_DIR_LEFT;
+            } else if (y_start < screen_height / 8
+                && point.y - y_start > screen_height / 4) {
+                dir = LV_DIR_BOTTOM;
+            } else if (screen_height - y_start < screen_height / 8
+                && y_start - point.y > screen_height / 4) {
+                dir = LV_DIR_TOP;
+            }
+            if (gui_global_gesture_callback && dir != LV_DIR_NONE) {
+                if (gui_global_gesture_callback(dir) == 0) {
+                    lv_indev_wait_release(lv_indev_active());
+                }
+            }
+            // ESP_LOGI(TAG, "Gesture end: dir: %d", dir);
+        }
+    }
+    last_state = state;
+}
+
+void gui_set_global_gesture_callback(int (*callback)(lv_dir_t dir))
+{
+    // ESP_LOGI(TAG, "Set global gesture callback: %p", callback);
+    gui_global_gesture_callback = callback;
+}
 
 lv_obj_t *gui_create_menu_item(lv_obj_t*parent, lv_color_t bg_color, void *icon, const char *content)
 {

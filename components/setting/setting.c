@@ -77,9 +77,7 @@ lv_obj_t *setting_get_screen(void)
 static void setting_init_screen(void)
 {
     lv_obj_t *scr = setting_get_screen();
-    lv_obj_add_event_cb(scr, setting_global_event_cb, LV_EVENT_GESTURE, NULL);
-    lv_obj_add_event_cb(scr, setting_global_event_cb, LV_EVENT_PRESSED, NULL);
-    lv_obj_add_event_cb(scr, setting_global_event_cb, LV_EVENT_RELEASED, NULL);
+    gui_set_global_gesture_callback(setting_gesture_callback);
 
     lv_obj_t *menu = lv_menu_create(scr);
     lv_obj_set_size(menu, lv_display_get_horizontal_resolution(NULL), lv_display_get_vertical_resolution(NULL));
@@ -117,6 +115,7 @@ static RtAppErr setting_init(void)
 
 static RtAppErr setting_stop(void)
 {
+    gui_set_global_gesture_callback(NULL);
     launcher_go_home(LV_SCR_LOAD_ANIM_MOVE_RIGHT, true);
     screen = NULL;
     return RTAM_OK;

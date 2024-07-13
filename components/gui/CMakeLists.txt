@@ -21,4 +21,10 @@ idf_component_register(
 target_compile_options(${COMPONENT_LIB}
                         PRIVATE
                         -DRTAM_CFG_USER="rtam_cfg_user.h")
-target_link_libraries(${COMPONENT_LIB} INTERFACE "-u rtAppgui")
+target_link_libraries(
+    ${COMPONENT_LIB}
+    
+    INTERFACE
+        "-u rtAppgui"
+        "-u shellCommandgui"
+)
