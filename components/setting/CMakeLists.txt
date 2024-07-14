@@ -1,12 +1,16 @@
 idf_component_register(
-    SRCS "setting.c"
+    SRCS "icon_app_setting_bt.c" "icon_app_setting_wifi.c" "setting_provider.c"
+         "setting_brightness.c"
+         "setting.c"
          "setting_common.c"
-         "setting_mechanice.c"
+        
          "setting_about.c"
          "icon_app_setting.c"
-         "icon_app_setting_mechanice.c"
+        
          "icon_app_setting_about.c"
          "icon_app_setting_brightness.c"
+         "icon_app_setting_wifi.c"
+         "icon_app_setting_bt.c"
 
     INCLUDE_DIRS "./"
 
@@ -20,6 +24,8 @@ idf_component_register(
         launcher
         gui
         battery
+        nvs_flash
+        cpost
 )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -DPROJECT_VER="${PROJECT_VER}")

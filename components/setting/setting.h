@@ -11,32 +11,41 @@
 
 #include "freertos/FreeRTOS.h"
 #include "lvgl.h"
+#include "misc/lv_types.h"
+
 
 typedef enum {
-    LV_MENU_ITEM_BUILDER_VARIANT_1,
-    LV_MENU_ITEM_BUILDER_VARIANT_2
-} lv_menu_builder_variant_t;
+    SETTING_ITEM_SUB_PAGE,
+    SETTING_ITEM_SWITCH,
+    SETTING_ITEM_CUSTOM,
+} setting_item_type_t;
 
-typedef enum {
-    SETTING_MECHANICE,
-    SETTING_ABOUT,
+typedef struct {
+    const char *name;
+    void *icon;
+    setting_item_type_t type;
+    const char *key;
+    void *data;
 
-    SETTING_ID_MAX,
-} setting_item_id_t;
+    lv_obj_t *widget;
+} setting_item_config_t;
+
+typedef lv_obj_t *(*setting_item_custom_get_screen)(void);
 
 extern const lv_image_dsc_t icon_app_setting;
 extern const lv_image_dsc_t icon_app_setting_about;
-extern const lv_image_dsc_t icon_app_setting_mechanice;
 extern const lv_image_dsc_t icon_app_setting_brightness;
+extern const lv_image_dsc_t icon_app_setting_wifi;
+extern const lv_image_dsc_t icon_app_setting_bt;
 
 lv_obj_t *setting_get_screen(void);
 int setting_gesture_callback(lv_dir_t dir);
-lv_obj_t *setting_create_text(lv_obj_t *parent, const void *icon, const char *txt,
-                              lv_menu_builder_variant_t builder_variant);
-lv_obj_t *setting_create_slider(lv_obj_t *parent, const void *icon, const char *txt,
-                                int32_t min, int32_t max, int32_t val, lv_event_cb_t event_cb);
 
-lv_obj_t *setting_create_mechanice(void);
+uint32_t setting_get_nvs_handle(void);
+
+lv_obj_t *setting_create_page(lv_obj_t *screen, setting_item_config_t *item_configs, const char *title);
+
+lv_obj_t *setting_create_brightness(void);
 lv_obj_t *setting_create_about(void);
 
 #endif /* __SETTING_H__ */

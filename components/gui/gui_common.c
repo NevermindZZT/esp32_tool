@@ -20,6 +20,7 @@
 #include "misc/lv_area.h"
 #include "misc/lv_color.h"
 #include "misc/lv_event.h"
+#include "misc/lv_style.h"
 #include "misc/lv_style_gen.h"
 #include "misc/lv_types.h"
 #include "battery.h"
@@ -27,11 +28,17 @@
 static const char *TAG = "gui_common";
 
 static int (*gui_global_gesture_callback)(lv_dir_t dir) = NULL;
+static bool global_gesture_actived = false;
+
+static int32_t gui_abs(int32_t x)
+{
+    return x > 0 ? x : -x;
+}
 
 void gui_global_gesture_handler(lv_indev_t *indev)
 {
-    static int32_t x_start = 0;
-    static int32_t y_start = 0;
+    static int32_t x_start = -1;
+    static int32_t y_start = -1;
     static uint32_t start_time = 0;
     static lv_indev_state_t last_state = LV_INDEV_STATE_RELEASED;
 
@@ -42,13 +49,15 @@ void gui_global_gesture_handler(lv_indev_t *indev)
     int32_t screen_width = lv_display_get_horizontal_resolution(NULL);
     int32_t screen_height = lv_display_get_vertical_resolution(NULL);
 
+    uint32_t interval = esp_log_timestamp() - start_time;
+
     if (last_state == LV_INDEV_STATE_RELEASED && state == LV_INDEV_STATE_PRESSED) {
         x_start = point.x;
         y_start = point.y;
         start_time = esp_log_timestamp();
         // ESP_LOGI(TAG, "Gesture start: %d, %d", (int)x_start, (int)y_start);
     } else if (last_state == LV_INDEV_STATE_PRESSED && state == LV_INDEV_STATE_RELEASED) {
-        if (esp_log_timestamp() - start_time < 400) {
+        if (interval < 400) {
             lv_dir_t dir = LV_DIR_NONE;
             if (x_start < screen_width / 8
                 && point.x - x_start > screen_width / 4) {
@@ -68,10 +77,28 @@ void gui_global_gesture_handler(lv_indev_t *indev)
                     lv_indev_wait_release(lv_indev_active());
                 }
             }
+            x_start = -1;
+            y_start = -1;
             // ESP_LOGI(TAG, "Gesture end: dir: %d", dir);
         }
     }
+
+    if (x_start != -1 && y_start != -1 && interval < 400) {
+        int32_t excepted = interval / 3;
+        if (gui_abs(point.x - x_start) > excepted || gui_abs(point.y - y_start) > excepted) {
+            global_gesture_actived = true;
+        } else {
+            global_gesture_actived = false;
+        }
+    } else {
+        global_gesture_actived = false;
+    }
     last_state = state;
+}
+
+bool gui_is_global_gesture_actived(void)
+{
+    return global_gesture_actived;
 }
 
 void gui_set_global_gesture_callback(int (*callback)(lv_dir_t dir))

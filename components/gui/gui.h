@@ -39,6 +39,7 @@ bool gui_is_han_font_loaded(void);
 void gui_global_event_cb(lv_event_t *event);
 void gui_global_gesture_handler(lv_indev_t *indev);
 void gui_set_global_gesture_callback(int (*callback)(lv_dir_t dir));
+bool gui_is_global_gesture_actived(void);
 
 lv_obj_t *gui_create_menu_item(lv_obj_t*parent, lv_color_t bg_color, void *icon, const char *content);
 lv_obj_t *gui_create_status_bar(lv_obj_t *parent, bool show_time, char *content);

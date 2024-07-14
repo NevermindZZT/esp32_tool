@@ -16,6 +16,7 @@
 #include "misc/lv_area.h"
 #include "misc/lv_style_gen.h"
 #include "misc/lv_types.h"
+#include "setting/setting_provider.h"
 #include "stdbool.h"
 #include "stdio.h"
 #include "stdlib.h"
@@ -163,6 +164,7 @@ static void gui_task(void *param)
     
     lv_init();
     lvgl_driver_init();
+    lvgl_set_backlight(setting_get(SETTING_KEY_SCR_BRIGHT, 100));
     touch_driver_set_calibrate(&cal_data);
 
     lv_tick_set_cb(lv_get_tick_cb);

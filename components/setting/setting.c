@@ -21,6 +21,7 @@
 #include "misc/lv_event.h"
 #include "misc/lv_types.h"
 #include "rtam_cfg_user.h"
+#include "setting_provider.h"
 #include "stdbool.h"
 #include "stdio.h"
 #include "stdlib.h"
@@ -46,23 +47,16 @@ static const char *TAG = "setting";
 
 static lv_obj_t *screen = NULL;
 
-static lv_obj_t* (*item_get_screen[SETTING_ID_MAX])(void) = {
-    [SETTING_MECHANICE] = setting_create_mechanice,
-    [SETTING_ABOUT] = setting_create_about,
+static setting_item_config_t setting_main_config[] = {
+    {"WiFi",       (void *)GUI_APP_RES_PNG(setting, wifi),       SETTING_ITEM_SWITCH,   SETTING_KEY_WIFI_ENABLED, NULL},
+    {"Bluetooth",  (void *)GUI_APP_RES_PNG(setting, bt),         SETTING_ITEM_SWITCH,   SETTING_KEY_BT_ENABLED,   NULL},
+    {"Brightness", (void *)GUI_APP_RES_PNG(setting, brightness), SETTING_ITEM_CUSTOM,   SETTING_KEY_SCR_BRIGHT,   setting_create_brightness},
+    {"About",      (void *)GUI_APP_RES_PNG(setting, about),      SETTING_ITEM_CUSTOM,   NULL,                     setting_create_about},
+
+    {NULL, NULL, 0, NULL, NULL},
 };
 
 static RtAppErr setting_stop(void);
-
-static void setting_item_event_cb(lv_event_t *event)
-{
-    lv_event_code_t code = lv_event_get_code(event);
-    if (code == LV_EVENT_CLICKED) {
-        setting_item_id_t id = (size_t) lv_event_get_user_data(event);
-        if (id < SETTING_ID_MAX) {
-            gui_push_screen(item_get_screen[id](), LV_SCR_LOAD_ANIM_MOVE_LEFT);
-        }
-    }
-}
 
 lv_obj_t *setting_get_screen(void)
 {
@@ -79,25 +73,7 @@ static void setting_init_screen(void)
     lv_obj_t *scr = setting_get_screen();
     gui_set_global_gesture_callback(setting_gesture_callback);
 
-    lv_obj_t *menu = lv_menu_create(scr);
-    lv_obj_set_size(menu, lv_display_get_horizontal_resolution(NULL), lv_display_get_vertical_resolution(NULL));
-    lv_obj_set_style_bg_color(menu, lv_color_hex(0x000000), LV_PART_MAIN);
-    lv_obj_center(menu);
-    lv_obj_add_flag(menu, LV_OBJ_FLAG_EVENT_BUBBLE);
-
-
-    // create main page
-    lv_obj_t *main_page = lv_menu_page_create(menu, "Setting");
-
-    lv_obj_t *mechanice = gui_create_menu_item(main_page, lv_obj_get_style_bg_color(menu, 0),
-                                               (void *)GUI_APP_RES_PNG(setting, mechanice), "Mechanice");
-    lv_obj_add_event_cb(mechanice, setting_item_event_cb, LV_EVENT_CLICKED, (void *)SETTING_MECHANICE);
-
-    lv_obj_t *about = gui_create_menu_item(main_page, lv_obj_get_style_bg_color(menu, 0),
-                                           (void *)GUI_APP_RES_PNG(setting, about), "About");
-    lv_obj_add_event_cb(about, setting_item_event_cb, LV_EVENT_CLICKED, (void *)SETTING_ABOUT);
-
-    lv_menu_set_page(menu, main_page);
+    setting_create_page(scr, setting_main_config, "Setting");
 }
 
 static void setting_resume(void)
