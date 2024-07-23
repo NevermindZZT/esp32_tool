@@ -29,10 +29,11 @@
 #define MULTIMETER_POWER_CONNECT_IO 11
 
 #define MULTIMETER_VOLTAGE_MAX      40000
-#define MULTIMETER_CURRENT_LSB      0.0512
-#define MULTIMETER_SHUNT_RESISTOR   0.1
-#define MUTLIMETER_CURRENT_MAX      MULTIMETER_CURRENT_LSB * 32768
-#define MUTLIMETER_POWER_MAX        MULTIMETER_VOLTAGE_MAX * MUTLIMETER_CURRENT_MAX
+#define MULTIMETER_CURRENT_LSB      0.001
+#define MULTIMETER_SHUNT_RESISTOR   0.005
+#define MUTLIMETER_CURRENT_MAX      (MULTIMETER_CURRENT_LSB * 32768)
+#define MUTLIMETER_POWER_MAX        (MULTIMETER_VOLTAGE_MAX * MUTLIMETER_CURRENT_MAX)
+#define MULTIMETER_RESISTOR_MAX     (3.3 / MULTIMETER_CURRENT_LSB)
 
 #define MUTLIMETER_TYPE_VOLTAGE     0
 #define MUTLIMETER_TYPE_CURRENT     1
@@ -134,6 +135,9 @@ static void multimeter_task(void *arg)
             int voltage = ina226_read_voltage();
             int current = ina226_read_current();
             int power = ina226_read_power();
+            int shunt = ina226_read_shunt_voltage();
+            // int current = (int)((float)shunt / MULTIMETER_SHUNT_RESISTOR / 1000);
+            // int power = voltage * current;
             if (type == MUTLIMETER_TYPE_VOLTAGE) {
                 gui_lock();
                 lv_label_set_text_fmt(value_label, "%d mV", voltage);
@@ -155,7 +159,7 @@ static void multimeter_task(void *arg)
                 if (current != 0) {
                     resistor = voltage / current;
                     lv_label_set_text_fmt(value_label, "%d Ohm", resistor);
-                    lv_arc_set_value(value_arc, (resistor * 100) / 1000000);
+                    lv_arc_set_value(value_arc, (resistor * 100) / MULTIMETER_RESISTOR_MAX);
                 } else {
                     lv_label_set_text_fmt(value_label, "- Ohm");
                     lv_arc_set_value(value_arc, 100);
@@ -228,6 +232,8 @@ static RtAppErr multimeter_init(void)
 
 static RtAppErr multimeter_stop(void)
 {
+    multimeter_set_type(MUTLIMETER_TYPE_VOLTAGE);
+    gpio_reset_pin(MULTIMETER_POWER_CONNECT_IO);
     return RTAM_OK;
 }
 

@@ -90,7 +90,7 @@ int ina226_read_current(void)
 {
     uint16_t data;
     ina226_read(INA226_REG_CURRENT, &data);
-    return (int)(data * ina226_current_lsb);
+    return (int)(data * ina226_current_lsb * 1000);
 }
 
 int ina226_read_power(void)
