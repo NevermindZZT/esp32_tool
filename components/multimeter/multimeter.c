@@ -64,11 +64,11 @@ static int multimeter_gesture_callback(lv_dir_t dir)
         return 0;
     } else if (dir == LV_DIR_BOTTOM || dir == LV_DIR_TOP) {
         type += dir == LV_DIR_BOTTOM ? 1 : -1;
-        if (type > MUTLIMETER_TYPE_RESISTOR) {
-            type = MUTLIMETER_TYPE_VOLTAGE;
-        } else if (type < MUTLIMETER_TYPE_VOLTAGE) {
+        if (type >= 0xFF) {
             type = MUTLIMETER_TYPE_RESISTOR;
-        }
+        } else if (type > MUTLIMETER_TYPE_RESISTOR) {
+            type = MUTLIMETER_TYPE_VOLTAGE;
+        } 
         multimeter_set_type(type);
     }
     return -1;
