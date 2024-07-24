@@ -17,6 +17,7 @@
 typedef enum {
     SETTING_ITEM_SUB_PAGE,
     SETTING_ITEM_SWITCH,
+    SETTING_ITEM_RADIO,
     SETTING_ITEM_CUSTOM,
 } setting_item_type_t;
 
@@ -37,6 +38,7 @@ extern const lv_image_dsc_t icon_app_setting_about;
 extern const lv_image_dsc_t icon_app_setting_brightness;
 extern const lv_image_dsc_t icon_app_setting_wifi;
 extern const lv_image_dsc_t icon_app_setting_bt;
+extern const lv_image_dsc_t icon_app_setting_screensaver;
 
 lv_obj_t *setting_get_screen(void);
 int setting_gesture_callback(lv_dir_t dir);

@@ -9,9 +9,11 @@
 #include "core/lv_obj.h"
 #include "core/lv_obj_event.h"
 #include "core/lv_obj_pos.h"
+#include "core/lv_obj_style.h"
 #include "core/lv_obj_style_gen.h"
 #include "core/lv_obj_tree.h"
 #include "display/lv_display.h"
+#include "draw/lv_draw_rect.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -26,9 +28,12 @@
 #include "rtam.h"
 #include "setting.h"
 #include "setting_provider.h"
+#include "widgets/checkbox/lv_checkbox.h"
 #include "widgets/image/lv_image.h"
 
-static const char *tag = "setting";
+static const char *TAG = "setting";
+
+static lv_obj_t *setting_create_radio_page(setting_item_config_t *item_configs, const char *title);
 
 int setting_gesture_callback(lv_dir_t dir)
 {
@@ -58,9 +63,9 @@ static void setting_item_event_cb(lv_event_t *event)
             // swtich item
             bool state = lv_obj_has_state(obj, LV_STATE_CHECKED);
             if (setting_set_bool(item_config->key, state) != 0) {
-                ESP_LOGE(tag, "set %s %s failed", item_config->name, state ? "on" : "off");
+                ESP_LOGE(TAG, "set %s %s failed", item_config->name, state ? "on" : "off");
             }
-            ESP_LOGI(tag, "switch %s %s", item_config->name, state ? "on" : "off");
+            ESP_LOGI(TAG, "switch %s %s", item_config->name, state ? "on" : "off");
         }
     } else if (code == LV_EVENT_CLICKED) {
         if (item_config->type == SETTING_ITEM_SUB_PAGE) {
@@ -77,15 +82,18 @@ static void setting_item_event_cb(lv_event_t *event)
                     lv_obj_add_state(switch_obj, LV_STATE_CHECKED);
                 }
                 if (setting_set_bool(item_config->key, state ? 0 : 1) != 0) {
-                    ESP_LOGE(tag, "set %s %s failed", item_config->name, state ? "on" : "off");
+                    ESP_LOGE(TAG, "set %s %s failed", item_config->name, state ? "on" : "off");
                 }
             }
+        } else if (item_config->type == SETTING_ITEM_RADIO) {
+            // radio item
+            gui_push_screen(setting_create_radio_page(item_config, item_config->name), LV_SCR_LOAD_ANIM_MOVE_LEFT);
         } else if (item_config->type == SETTING_ITEM_CUSTOM) {
             // custom item
             setting_item_custom_get_screen get_screen = (setting_item_custom_get_screen) item_config->data;
             gui_push_screen(get_screen(), LV_SCR_LOAD_ANIM_MOVE_LEFT);
         }
-        ESP_LOGI(tag, "click %s", item_config->name);
+        ESP_LOGI(TAG, "click %s", item_config->name);
     }
 }
 
@@ -150,3 +158,75 @@ lv_obj_t *setting_create_page(lv_obj_t *screen, setting_item_config_t *item_conf
 
     return screen;
 }
+
+
+static void setting_radio_event_cb(lv_event_t *event)
+{
+    lv_obj_t *current_target = lv_event_get_current_target(event);
+    lv_obj_t *obj = lv_event_get_target(event);
+    lv_event_code_t code = lv_event_get_code(event);
+    setting_item_config_t *item_config = (setting_item_config_t *) lv_event_get_user_data(event);
+
+    if (gui_is_global_gesture_actived()) {
+        return;
+    }
+
+    if (current_target == obj) {
+        return;
+    }
+
+    const char **item_data = item_config->data;
+
+    if (code == LV_EVENT_CLICKED) {
+        for (int i =  0; i < lv_obj_get_child_count(item_config->widget); i++) {
+            lv_obj_t *radio = lv_obj_get_child(item_config->widget, i);
+            if (radio == obj) {
+                setting_set_str(item_config->key, item_data[i]);
+                lv_obj_add_state(radio, LV_STATE_CHECKED);
+            } else {
+                lv_obj_clear_state(radio, LV_STATE_CHECKED);
+            }
+        }
+    }
+
+}
+
+lv_obj_t *setting_create_radio_page(setting_item_config_t *item_config, const char *title)
+{
+    lv_obj_t *screen = lv_obj_create(NULL);
+    lv_obj_set_style_bg_color(screen, lv_color_hex(0x000000), LV_PART_MAIN);
+
+    lv_obj_t *menu = lv_menu_create(screen);
+    lv_obj_set_size(menu, lv_display_get_horizontal_resolution(NULL), lv_display_get_vertical_resolution(NULL));
+    lv_obj_set_style_bg_color(menu, lv_color_hex(0x000000), LV_PART_MAIN);
+    lv_obj_center(menu);
+
+    // create main page
+    lv_obj_t *main_page = lv_menu_page_create(menu, title);
+
+    const char **item_data = item_config->data;
+
+    while (*item_data) {
+        lv_obj_t *radio = lv_checkbox_create(main_page);
+        lv_obj_set_style_bg_color(radio, lv_color_hex(0x000000), LV_PART_MAIN);
+        lv_obj_set_style_bg_opa(radio, LV_OPA_TRANSP, LV_PART_MAIN);
+        lv_obj_set_style_border_width(radio, 0, LV_PART_MAIN);
+        lv_obj_set_style_pad_ver(radio, 8, LV_PART_MAIN);
+        lv_obj_set_style_pad_hor(radio, 0, LV_PART_MAIN);
+        lv_obj_set_style_radius(radio, LV_RADIUS_CIRCLE, LV_PART_INDICATOR);
+        lv_obj_set_style_bg_image_src(radio, NULL, LV_PART_INDICATOR | LV_STATE_CHECKED);
+        lv_obj_add_flag(radio, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_checkbox_set_text(radio, *item_data);
+        if (strcmp(setting_get_str(item_config->key, ""), *item_data) == 0) {
+            lv_obj_add_state(radio, LV_STATE_CHECKED);
+        }
+
+        item_data++;
+    }
+    item_config->widget = main_page;
+    lv_obj_add_event_cb(main_page, setting_radio_event_cb, LV_EVENT_CLICKED, item_config);
+
+    lv_menu_set_page(menu, main_page);
+
+    return screen;
+} 

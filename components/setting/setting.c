@@ -47,11 +47,18 @@ static const char *TAG = "setting";
 
 static lv_obj_t *screen = NULL;
 
+static const char *setting_screensaver_radio_itmes[] = {
+    "Simple Time",
+    "Mech Watch",
+    NULL
+};
+
 static setting_item_config_t setting_main_config[] = {
-    {"WiFi",       (void *)GUI_APP_RES_PNG(setting, wifi),       SETTING_ITEM_SWITCH,   SETTING_KEY_WIFI_ENABLED, NULL},
-    {"Bluetooth",  (void *)GUI_APP_RES_PNG(setting, bt),         SETTING_ITEM_SWITCH,   SETTING_KEY_BT_ENABLED,   NULL},
-    {"Brightness", (void *)GUI_APP_RES_PNG(setting, brightness), SETTING_ITEM_CUSTOM,   SETTING_KEY_SCR_BRIGHT,   setting_create_brightness},
-    {"About",      (void *)GUI_APP_RES_PNG(setting, about),      SETTING_ITEM_CUSTOM,   NULL,                     setting_create_about},
+    {"WiFi",        (void *)GUI_APP_RES_PNG(setting, wifi),        SETTING_ITEM_SWITCH, SETTING_KEY_WIFI_ENABLED,     NULL},
+    {"Bluetooth",   (void *)GUI_APP_RES_PNG(setting, bt),          SETTING_ITEM_SWITCH, SETTING_KEY_BT_ENABLED,       NULL},
+    {"Screensaver", (void *)GUI_APP_RES_PNG(setting, screensaver), SETTING_ITEM_RADIO,  SETTING_KEY_SCREENSAVER_TYPE, setting_screensaver_radio_itmes},
+    {"Brightness",  (void *)GUI_APP_RES_PNG(setting, brightness),  SETTING_ITEM_CUSTOM, SETTING_KEY_SCR_BRIGHT,       setting_create_brightness},
+    {"About",       (void *)GUI_APP_RES_PNG(setting, about),       SETTING_ITEM_CUSTOM, NULL,                         setting_create_about},
 
     {NULL, NULL, 0, NULL, NULL},
 };

@@ -16,19 +16,28 @@
 #include "misc/lv_area.h"
 #include "misc/lv_types.h"
 #include "rtam.h"
+#include "setting_provider.h"
 #include "time.h"
 #include "sys/time.h"
 #include "key.h"
+#include "screensaver.h"
 
 static const char *tag = "screensaver";
 
 static lv_obj_t *screen = NULL;
-static lv_obj_t *date_label = NULL;
-static lv_obj_t *time_label = NULL;
 static bool run = true;
 static bool display_on = true;
+struct screensaver_config *selected_saver;
 
 extern const lv_image_dsc_t icon_app_screensaver;
+
+
+extern struct screensaver_config simple_time_saver;
+
+static struct screensaver_config *savers[] = {
+    [0] = &simple_time_saver,
+};
+
 
 lv_obj_t *screensaver_get_screen(void);
 
@@ -66,82 +75,41 @@ static int screensaver_gesture_callback(lv_dir_t dir)
     return -1;
 }
 
-static void screensaver_update(void)
-{
-    char date_buf[32];
-    char time_buf[32];
-    time_t now;
-    struct tm timeinfo;
-
-    time(&now);
-    localtime_r(&now, &timeinfo);
-
-    strftime(date_buf, sizeof(date_buf), "%Y-%m-%d", &timeinfo);
-    strftime(time_buf, sizeof(time_buf), "%H:%M:%S", &timeinfo);
-
-    lv_label_set_text(date_label, date_buf);
-    lv_label_set_text(time_label, time_buf);
-}
 
 lv_obj_t *screensaver_get_screen(void)
 {
-    if (!screen)
-    {
-        screen = lv_obj_create(NULL);
-        lv_obj_set_style_bg_color(screen, lv_color_hex(0x000000), LV_PART_MAIN);
-    }
     return screen;
 }
 
-static void screensaver_init_screen(void)
+
+bool screensaver_running(void)
 {
-    gui_lock();
-    lv_obj_t *scr = screensaver_get_screen();
-    gui_set_global_gesture_callback(screensaver_gesture_callback);
-
-    lv_obj_t *background = lv_img_create(scr);
-    lv_img_set_src(background, "S:/spiflash/data/wallpaper.jpg");
-    lv_obj_center(background);
-    
-    time_label = lv_label_create(scr);
-    lv_obj_set_width(time_label, LV_PCT(90));
-    lv_obj_set_height(time_label, LV_SIZE_CONTENT);
-    lv_obj_set_style_text_font(time_label, &lv_font_montserrat_48, LV_PART_MAIN);
-    lv_obj_align_to(time_label, scr, LV_ALIGN_TOP_LEFT, 8, 48);
-
-    date_label = lv_label_create(scr);
-    lv_obj_set_width(date_label, LV_PCT(90));
-    lv_obj_set_height(date_label, LV_SIZE_CONTENT);
-    lv_obj_set_style_text_font(date_label, &lv_font_montserrat_24, LV_PART_MAIN);
-    lv_obj_align_to(date_label, time_label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
-
-    screensaver_update();
-
-    gui_unlock();
-}
-
-static void screensaver_task(void *arg)
-{
-    while (run)
-    {
-        gui_lock();
-        screensaver_update();
-        gui_unlock();
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-    vTaskDelete(NULL);
+    return run;
 }
 
 static void screensaver_resume(void)
 {
     gui_push_screen(screensaver_get_screen(), LV_SCR_LOAD_ANIM_FADE_IN);
-    xTaskCreate(screensaver_task, "screensaver_task", 2048, NULL, 10, NULL);
+    xTaskCreate(selected_saver->task,
+                "screensaver_task", 2048, NULL, 10, NULL);
 }
 
 static RtAppErr screensaver_init(void)
 {
     run = true;
-    screensaver_init_screen();
+    
+    selected_saver = savers[0];
+    char *saver_type = setting_get_str(SETTING_KEY_SCREENSAVER_TYPE, "Simple Time");
+
+    for (int i = 0; i < sizeof(savers) / sizeof(savers[0]); i++) {
+        if (strcmp(saver_type, savers[i]->name) == 0) {
+            selected_saver = savers[i];
+            break;
+        }
+    }
+
+    screen = selected_saver->get_screen();
+    gui_set_global_gesture_callback(screensaver_gesture_callback);
     screensaver_resume();
     
     setenv("TZ", "CST-8", 1);

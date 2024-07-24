@@ -1,5 +1,7 @@
 idf_component_register(
-    SRCS "icon_app_setting_bt.c" "icon_app_setting_wifi.c" "setting_provider.c"
+    SRCS "icon_app_setting_bt.c"
+         "icon_app_setting_wifi.c"
+         "setting_provider.c"
          "setting_brightness.c"
          "setting.c"
          "setting_common.c"
@@ -11,6 +13,7 @@ idf_component_register(
          "icon_app_setting_brightness.c"
          "icon_app_setting_wifi.c"
          "icon_app_setting_bt.c"
+         "icon_app_setting_screensaver.c"
 
     INCLUDE_DIRS "./"
 

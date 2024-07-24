@@ -1,6 +1,7 @@
 idf_component_register(
     SRCS
         "screensaver.c"
+        "simple_time.c"
 
     INCLUDE_DIRS "./"
 
@@ -13,6 +14,7 @@ idf_component_register(
         gui
         shell
         key
+        setting
 )
 
 target_link_libraries(

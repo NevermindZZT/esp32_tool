@@ -13,9 +13,10 @@
 
 #define SETTING_NVS_NAMESPACE "setting"
 
-#define SETTING_KEY_WIFI_ENABLED "wifi_enabled"
-#define SETTING_KEY_BT_ENABLED "bt_enabled"
-#define SETTING_KEY_SCR_BRIGHT "scr_bright"
+#define SETTING_KEY_WIFI_ENABLED        "wifi_enabled"
+#define SETTING_KEY_BT_ENABLED          "bt_enabled"
+#define SETTING_KEY_SCR_BRIGHT          "scr_bright"
+#define SETTING_KEY_SCREENSAVER_TYPE    "saver_type"
 
 
 int setting_get(const char *key, int def);
