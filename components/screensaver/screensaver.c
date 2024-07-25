@@ -33,9 +33,11 @@ extern const lv_image_dsc_t icon_app_screensaver;
 
 
 extern struct screensaver_config simple_time_saver;
+extern struct screensaver_config mech_watch_saver;
 
 static struct screensaver_config *savers[] = {
     [0] = &simple_time_saver,
+    [1] = &mech_watch_saver,
 };
 
 

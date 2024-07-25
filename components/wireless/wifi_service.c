@@ -101,7 +101,7 @@ wifi, wifi_cmd_group, wifi service command group);
 
 static void wifi_ntp_init(void)
 {
-    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("ntp.aliyun.com");
     ESP_ERROR_CHECK(esp_netif_sntp_init(&config));
 }
 

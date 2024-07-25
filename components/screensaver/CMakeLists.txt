@@ -2,6 +2,7 @@ idf_component_register(
     SRCS
         "screensaver.c"
         "simple_time.c"
+        "mech_watch.c"
 
     INCLUDE_DIRS "./"
 
