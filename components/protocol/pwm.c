@@ -364,7 +364,7 @@ static void pwm_init_screen(void)
 {
     lv_obj_t *scr = pwm_get_screen();
 
-    gui_set_global_gesture_callback(pwm_gesture_callback);
+    gui_add_global_gesture_callback(pwm_gesture_callback);
 
     lv_obj_t *tabview = lv_tabview_create(scr);
     lv_obj_set_size(tabview, 
@@ -388,6 +388,7 @@ static void pwm_init_screen(void)
 
 static RtAppErr pwm_suspend(void)
 {
+    gui_remove_global_gesture_callback(pwm_gesture_callback);
     launcher_go_home(LV_SCR_LOAD_ANIM_MOVE_RIGHT, true);
     screen = NULL;
     return RTAM_OK;

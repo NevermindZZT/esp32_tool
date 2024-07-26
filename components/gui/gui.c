@@ -185,7 +185,7 @@ static void gui_task(void *param)
 
     void *buf1 = heap_caps_malloc(GUI_BUFFER_SIZE, MALLOC_CAP_DEFAULT);
     void *buf2 = heap_caps_malloc(GUI_BUFFER_SIZE, MALLOC_CAP_DEFAULT);
-    lv_display_set_buffers(display, buf1, buf2, GUI_BUFFER_SIZE, LV_DISPLAY_RENDER_MODE_PARTIAL);
+    lv_display_set_buffers(display, buf1, buf2, GUI_BUFFER_SIZE, LV_DISPLAY_RENDER_MODE_FULL);
 
     const esp_timer_create_args_t periodic_timer_args = {
 		.callback = &lv_tick_task,

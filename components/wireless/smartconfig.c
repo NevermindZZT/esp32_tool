@@ -64,7 +64,7 @@ lv_obj_t *smartconfig_get_screen(void)
 static void smartconfig_init_screen(void)
 {
     lv_obj_t *scr = smartconfig_get_screen();
-    gui_set_global_gesture_callback(smartconfig_gesture_callback);
+    gui_add_global_gesture_callback(smartconfig_gesture_callback);
 
     lv_obj_t *label = lv_label_create(scr);
     lv_label_set_long_mode(label, LV_LABEL_LONG_WRAP);
@@ -93,6 +93,8 @@ static RtAppErr smartconfig_init(void)
 static RtAppErr smartconfig_stop(void)
 {
     esp_smartconfig_stop();
+    
+    gui_remove_global_gesture_callback(smartconfig_gesture_callback);
 
     launcher_go_home(LV_SCR_LOAD_ANIM_MOVE_RIGHT, true);
     screen = NULL;

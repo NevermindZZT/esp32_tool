@@ -199,7 +199,7 @@ multimeter, multimeter_group, multimeter);
 static RtAppErr multimeter_suspend(void)
 {
     run = false;
-    gui_set_global_gesture_callback(NULL);
+    gui_remove_global_gesture_callback(multimeter_gesture_callback);
     launcher_go_home(LV_SCR_LOAD_ANIM_MOVE_RIGHT, true);
     screen = NULL;
     return RTAM_OK;
@@ -209,7 +209,7 @@ static RtAppErr multimeter_resume(void)
 {
     multimeter_init_screen();
     gui_push_screen(multimeter_get_screen(), LV_SCR_LOAD_ANIM_FADE_IN);
-    gui_set_global_gesture_callback(multimeter_gesture_callback);
+    gui_add_global_gesture_callback(multimeter_gesture_callback);
     run = true;
     xTaskCreate(multimeter_task, "multimeterTask", 2048, NULL, 1, NULL);
     return RTAM_OK;

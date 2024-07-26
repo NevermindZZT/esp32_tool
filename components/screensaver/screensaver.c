@@ -111,7 +111,7 @@ static RtAppErr screensaver_init(void)
     }
 
     screen = selected_saver->get_screen();
-    gui_set_global_gesture_callback(screensaver_gesture_callback);
+    gui_add_global_gesture_callback(screensaver_gesture_callback);
     screensaver_resume();
     
     setenv("TZ", "CST-8", 1);
@@ -127,6 +127,7 @@ static RtAppErr screensaver_stop(void)
     gui_back();
     screen = NULL;
 
+    gui_remove_global_gesture_callback(screensaver_gesture_callback);
     key_remove_callback(KEY_CODE_POWER, key_press_callback);
     return RTAM_OK;
 }

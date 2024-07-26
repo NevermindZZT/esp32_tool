@@ -11,6 +11,7 @@
 #include "core/lv_obj_pos.h"
 #include "core/lv_obj_scroll.h"
 #include "core/lv_obj_style_gen.h"
+#include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "font/lv_symbol_def.h"
 #include "freertos/FreeRTOS.h"
@@ -27,7 +28,12 @@
 
 static const char *TAG = "gui_common";
 
-static int (*gui_global_gesture_callback)(lv_dir_t dir) = NULL;
+struct gesture_callback {
+    int (*callback)(lv_dir_t dir);
+    struct gesture_callback *next;
+};
+
+static struct gesture_callback *gesture_callbacks = NULL;
 static bool global_gesture_actived = false;
 
 static int32_t gui_abs(int32_t x)
@@ -72,10 +78,14 @@ void gui_global_gesture_handler(lv_indev_t *indev)
                 && y_start - point.y > screen_height / 4) {
                 dir = LV_DIR_TOP;
             }
-            if (gui_global_gesture_callback && dir != LV_DIR_NONE) {
-                if (gui_global_gesture_callback(dir) == 0) {
-                    lv_indev_wait_release(lv_indev_active());
+            struct gesture_callback *callbacks = gesture_callbacks;
+            while (callbacks) {
+                if (callbacks->callback && dir != LV_DIR_NONE) {
+                    if (callbacks->callback(dir) == 0) {
+                        break;
+                    }
                 }
+                callbacks = callbacks->next;
             }
             x_start = -1;
             y_start = -1;
@@ -101,10 +111,31 @@ bool gui_is_global_gesture_actived(void)
     return global_gesture_actived;
 }
 
-void gui_set_global_gesture_callback(int (*callback)(lv_dir_t dir))
+void gui_add_global_gesture_callback(int (*callback)(lv_dir_t dir))
 {
-    // ESP_LOGI(TAG, "Set global gesture callback: %p", callback);
-    gui_global_gesture_callback = callback;
+    struct gesture_callback *new_callback = heap_caps_malloc(sizeof(struct gesture_callback), MALLOC_CAP_DEFAULT);
+    new_callback->callback = callback;
+    new_callback->next = gesture_callbacks;
+    gesture_callbacks = new_callback;
+}
+
+void gui_remove_global_gesture_callback(int (*callback)(lv_dir_t dir))
+{
+    struct gesture_callback *prev = NULL;
+    struct gesture_callback *current = gesture_callbacks;
+    while (current) {
+        if (current->callback == callback) {
+            if (prev) {
+                prev->next = current->next;
+            } else {
+                gesture_callbacks = current->next;
+            }
+            heap_caps_free(current);
+            break;
+        }
+        prev = current;
+        current = current->next;
+    }
 }
 
 lv_obj_t *gui_create_menu_item(lv_obj_t*parent, lv_color_t bg_color, void *icon, const char *content)

@@ -89,7 +89,7 @@ static void serial_debug_init_screen(void)
 {
     lv_obj_t *scr = serial_debug_get_screen();
 
-    gui_set_global_gesture_callback(serial_debug_gesture_callback);
+    gui_add_global_gesture_callback(serial_debug_gesture_callback);
 
     lv_obj_t *title = lv_label_create(scr);
     lv_label_set_text(title, "Serial Debug");
@@ -137,7 +137,7 @@ static RtAppErr serial_debug_suspend(void)
     serial_debug_i2c_deinit_info();
     serial_debug_spi_deinit_info();
 
-    gui_set_global_gesture_callback(NULL);
+    gui_remove_global_gesture_callback(serial_debug_gesture_callback);
     launcher_go_home(LV_SCR_LOAD_ANIM_MOVE_RIGHT, true);
     screen = NULL;
     return RTAM_OK;
