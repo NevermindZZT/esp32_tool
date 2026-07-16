@@ -106,7 +106,7 @@ void serial_debug_spi_init(int cs_pin, int sclk_pin, int mosi_pin, int miso_pin,
         .data2_io_num = info.mio2_io,
         .data3_io_num = info.mio3_io,
         .max_transfer_sz = 0,
-        .intr_flags = ESP_INTR_FLAG_SHARED|ESP_INTR_FLAG_LEVEL3,
+        .intr_flags = ESP_INTR_FLAG_LEVEL3,
     };
     ESP_ERROR_CHECK(spi_bus_initialize(SERIAL_DEBUG_SPI_PORT, &bus_conf, SPI_DMA_DISABLED));
     spi_device_interface_config_t dev_conf = {

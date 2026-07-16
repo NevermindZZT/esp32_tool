@@ -44,7 +44,7 @@ static struct key_def keys[] = {
     {KEY_CODE_BOOT,   "boot",  CONFIG_KEY_BOOT_PIN,  CONFIG_KEY_BOOT_PIN_INVERT, NULL},
 };
 
-int key_add_callback(enum key_code code, int (*on_press)(int key, enum key_action action))
+int key_add_callback(enum key_code code, int (*on_press)(enum key_code code, enum key_action action))
 {
     for (int i = 0; i < sizeof(keys) / sizeof(keys[0]); i++) {
         if (keys[i].code == code) {
@@ -62,7 +62,7 @@ int key_add_callback(enum key_code code, int (*on_press)(int key, enum key_actio
     return -1;
 }
 
-int key_remove_callback(enum key_code code, int (*on_press)(int key, enum key_action action))
+int key_remove_callback(enum key_code code, int (*on_press)(enum key_code code, enum key_action action))
 {
     for (int i = 0; i < sizeof(keys) / sizeof(keys[0]); i++) {
         if (keys[i].code == code) {
@@ -94,10 +94,10 @@ static void IRAM_ATTR gpio_isr_handler(void* arg)
     xQueueSendFromISR(gpio_evt_queue, &key, NULL);
 }
 
-static enum key_action get_key(struct key_def *key)
+static enum key_action get_key_action(struct key_def *key)
 {
-    while (gpio_get_level(key->gpio) == key->invert ? 1 : 0
-            && esp_log_timestamp - key->last_press_time < 2000) {
+    while (gpio_get_level(key->gpio) == (key->invert ? 1 : 0)
+            && esp_log_timestamp() - key->last_press_time < 2000) {
         vTaskDelay(pdMS_TO_TICKS(1));
     }
     uint32_t time = esp_log_timestamp() - key->last_press_time;
@@ -126,7 +126,7 @@ static void key_task(void* arg)
     struct key_def *key;
     for(;;) {
         if(xQueueReceive(gpio_evt_queue, &key, portMAX_DELAY)) {
-            int action = get_key(key);
+            enum key_action action = get_key_action(key);
             ESP_LOGI(TAG, "key %s pressed, action %d", key->name, action);
             for (struct key_callbacks *callbacks = key->callbacks; callbacks; callbacks = callbacks->next) {
                 if (callbacks->on_press) {

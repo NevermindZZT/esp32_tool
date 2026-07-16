@@ -21,6 +21,7 @@
 #include "sys/time.h"
 #include "key.h"
 #include "screensaver.h"
+#include "string.h"
 
 static const char *tag = "screensaver";
 

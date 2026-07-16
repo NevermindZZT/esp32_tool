@@ -12,6 +12,7 @@ idf_component_register(
         esp_tinyusb
         rtam
         vfs
+        esp_vfs_console
         storage
 )
 

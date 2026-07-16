@@ -37,8 +37,8 @@ struct key_callbacks {
     struct key_callbacks *next;
 };
 
-int key_add_callback(enum key_code code, int (*on_press)(int key, enum key_action action));
+int key_add_callback(enum key_code code, int (*on_press)(enum key_code code, enum key_action action));
 
-int key_remove_callback(enum key_code code, int (*on_press)(int key, enum key_action action));
+int key_remove_callback(enum key_code code, int (*on_press)(enum key_code code, enum key_action action));
 
 #endif // __KEY_H__

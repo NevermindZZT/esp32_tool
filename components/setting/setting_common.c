@@ -30,6 +30,7 @@
 #include "setting_provider.h"
 #include "widgets/checkbox/lv_checkbox.h"
 #include "widgets/image/lv_image.h"
+#include "string.h"
 
 static const char *TAG = "setting";
 

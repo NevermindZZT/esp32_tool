@@ -16,6 +16,7 @@
 #include "esp_vfs.h"
 #include "esp_vfs_cdcacm.h"
 #include "tinyusb.h"
+#include "tinyusb_default_config.h"
 #include "tusb_console.h"
 #include "tusb_msc_storage.h"
 #include "tusb_cdc_acm.h"
@@ -147,11 +148,10 @@ void tinyusb_cdc_line_state_changed_callback(int itf, cdcacm_event_t *event)
 RtAppErr usb_device_init(void)
 {
 #if defined(USB_DEVICE_USER_TINYUSB)
-    const tinyusb_config_t tusb_cfg = { 0 };
+    const tinyusb_config_t tusb_cfg = TINYUSB_DEFAULT_CONFIG();
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
     tinyusb_config_cdcacm_t acm_cfg = {
-        .usb_dev = TINYUSB_USBDEV_0,
         .cdc_port = TINYUSB_CDC_ACM_0,
         .callback_rx = tinyusb_cdc_rx_callback,
         .callback_rx_wanted_char = NULL,

@@ -6,11 +6,12 @@
  * @date 2024-04-25
  * @copyright (c) 2024 Letter All rights reserved.
  */
+#include "lvgl.h"
 #include "display/lv_display.h"
 #include "draw/lv_draw_buf.h"
 #include "esp_lcd_backlight.h"
 #include "esp_log.h"
-#include "font/lv_binfont_loader.h"
+#include "font/binfont_loader/lv_binfont_loader.h"
 #include "freertos/projdefs.h"
 #include "indev/lv_indev.h"
 #include "misc/lv_area.h"

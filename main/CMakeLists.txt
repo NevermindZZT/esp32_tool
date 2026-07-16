@@ -7,4 +7,5 @@ idf_component_register(
     REQUIRES
         nvs_flash
         rtam
+        usb_device
 )
