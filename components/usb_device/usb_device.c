@@ -195,3 +195,22 @@ void usb_switch_log(char cdc)
 }
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC),
 swtich_log, usb_switch_log, switch log to usb or uart);
+
+static signed short dummy_write(char *data, unsigned short len) { (void)data; return len; }
+static signed short dummy_read(char *data, unsigned short len) { (void)data; vTaskDelay(pdMS_TO_TICKS(100)); return 0; }
+
+void cdc_shell_toggle(int enable)
+{
+    if (enable) {
+        cdc_shell.write = cdc_shell_write;
+        cdc_shell.read = cdc_shell_read;
+        printf("CDC shell enabled\n");
+    } else {
+        cdc_shell.write = dummy_write;
+        cdc_shell.read = dummy_read;
+        printf("CDC shell disabled\n");
+    }
+}
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC),
+cdc_shell, cdc_shell_toggle, toggle CDC shell
+cdc_shell 0|1);

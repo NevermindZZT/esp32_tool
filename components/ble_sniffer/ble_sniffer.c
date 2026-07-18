@@ -1,20 +1,15 @@
 /**
  * @file ble_sniffer.c
- * @author Letter (NevermindZZT@gmail.com)
  * @brief BLE Sniffer RTAM App - capture BLE advertising via GAP scan
- * @version 4.0.0
+ * @version 5.1.0
  * @date 2026-07-18
- * @copyright (c) 2026 Letter All rights reserved.
  *
  * Architecture:
- *   start() -> bt_manager_init() + pcap header (safe RTAM context)
- *   resume() -> create UI
- *
- *   GAP scan callback receives scan results -> builds synthetic HCI
- *   LE Advertising Report events -> pcapng -> USB CDC -> Wireshark
- *
- * NOTE: VHCI conflicts with Bluedroid, so we use GAP API directly
- *       and construct HCI-level events for Wireshark compatibility.
+ *   start() -> bt_manager_init() + pcap header
+ *   resume() -> create UI, register gesture
+ *   GAP scan -> pcapng -> CDC -> Wireshark
+ *            -> btsnoop -> FAT file
+ *            -> ring buffer -> shell "ble_sniff list"
  */
 #include <stdio.h>
 #include <string.h>
@@ -26,6 +21,7 @@
 #include "esp_gap_ble_api.h"
 #include "bt_manager.h"
 #include "ble_sniffer_pcap.h"
+#include "ble_sniffer_btsnoop.h"
 #include "gui.h"
 #include "launcher.h"
 #include "rtam.h"
@@ -43,7 +39,7 @@
 static const char *TAG = "ble_sniffer";
 
 static bool bt_ready = false;
-static bool scanning = false;
+static volatile bool scanning = false;
 
 static lv_obj_t *screen = NULL;
 static lv_obj_t *status_label = NULL;
@@ -51,9 +47,38 @@ static lv_obj_t *count_label = NULL;
 static lv_obj_t *btn_toggle = NULL;
 static lv_timer_t *sniffer_timer = NULL;
 static uint32_t display_count = 0;
-static uint32_t packet_count = 0;
+static volatile uint32_t packet_count = 0;
 
-/* ---- pcapng data output via USB CDC ---- */
+/* btsnoop recording */
+static bool btsnoop_recording = false;
+static FILE *btsnoop_file = NULL;
+
+#define FAT_BASE "/spiflash"
+
+static void btsnoop_file_writer(const uint8_t *data, uint32_t len)
+{
+    if (btsnoop_file) {
+        fwrite(data, 1, len, btsnoop_file);
+    }
+}
+
+/* Ring buffer */
+#define PKT_RING_SIZE   16
+#define PKT_DATA_MAX    64
+
+typedef struct {
+    uint8_t bda[6];
+    int8_t rssi;
+    char name[33];
+    uint16_t data_len;
+    uint8_t data[PKT_DATA_MAX];
+} pkt_record_t;
+
+static pkt_record_t pkt_ring[PKT_RING_SIZE];
+static volatile int pkt_ring_head = 0;
+static volatile int pkt_ring_count = 0;
+
+/* ---- pcapng output via USB CDC ---- */
 
 static void pcap_output_cb(const uint8_t *data, uint32_t len)
 {
@@ -61,57 +86,64 @@ static void pcap_output_cb(const uint8_t *data, uint32_t len)
     tinyusb_cdcacm_write_flush(TINYUSB_CDC_ACM_0, 0);
 }
 
-/* ---- Send an advertising report as pcapng HCI event ---- */
+/* ---- Extract name from adv data ---- */
+
+static void extract_name(const uint8_t *adv, uint8_t len, char *name, uint8_t name_max)
+{
+    name[0] = 0;
+    uint8_t idx = 0;
+    while (idx < len) {
+        uint8_t field_len = adv[idx];
+        if (field_len == 0) break;
+        uint8_t field_type = adv[idx + 1];
+        if (field_type == 0x08 || field_type == 0x09) {
+            uint8_t nlen = field_len - 1;
+            if (nlen > name_max - 1) nlen = name_max - 1;
+            memcpy(name, &adv[idx + 2], nlen);
+            name[nlen] = 0;
+            return;
+        }
+        idx += field_len + 1;
+    }
+}
+
+/* ---- Build HCI event + output ---- */
 
 static void send_advertising_report(esp_ble_gap_cb_param_t *param)
 {
-    uint8_t adv_len = param->scan_rst.adv_data_len;
-    if (adv_len > 31) adv_len = 31;
+    const uint8_t adv_len = (param->scan_rst.adv_data_len > 31) ? 31 : param->scan_rst.adv_data_len;
+    const uint8_t evt_len = 1 + 1 + 1 + 1 + 6 + 1 + adv_len + 1;
+    const uint16_t pkt_len = 2 + 1 + evt_len;
 
-    /* Build HCI LE Advertising Report event
-     * Event Code (2) = 0x3E, Subevent (1) = 0x02
-     */
-    uint8_t evt_body_len = 1 + 1 + 1 + 1 + 6 + 1 + adv_len + 1;
-    uint8_t hci_pkt_len = 2 + 1 + evt_body_len;
-
-    uint8_t pkt[hci_pkt_len];
-    int pos = 0;
-
-    /* Event Code: HCI_LE_Meta */
+    uint8_t pkt[pkt_len];
+    uint16_t pos = 0;
     pkt[pos++] = 0x3E;
-    pkt[pos++] = 0x00; /* placeholder length */
-    /* Event Length */
-    pkt[pos++] = evt_body_len;
-    /* Subevent: LE_Advertising_Report */
+    pkt[pos++] = 0x00;
+    pkt[pos++] = evt_len;
     pkt[pos++] = 0x02;
-    /* Num Reports */
     pkt[pos++] = 1;
-    /* Event Type */
-    if (param->scan_rst.scan_rsp_len > 0) {
-        pkt[pos++] = 0x04; /* SCAN_RSP */
-    } else {
-        pkt[pos++] = param->scan_rst.ble_evt_type;
-    }
-    /* Address Type */
+    pkt[pos++] = (param->scan_rst.scan_rsp_len > 0) ? 0x04 : (uint8_t)param->scan_rst.ble_evt_type;
     pkt[pos++] = param->scan_rst.ble_addr_type;
-    /* Address */
     memcpy(&pkt[pos], param->scan_rst.bda, 6);
     pos += 6;
-    /* Data Length */
     pkt[pos++] = adv_len;
-    /* Adv Data */
-    if (adv_len > 0) {
-        memcpy(&pkt[pos], param->scan_rst.ble_adv, adv_len);
-        pos += adv_len;
-    }
-    /* RSSI */
+    if (adv_len > 0) { memcpy(&pkt[pos], param->scan_rst.ble_adv, adv_len); pos += adv_len; }
     pkt[pos++] = (uint8_t)(param->scan_rst.rssi & 0xFF);
-
-    /* Fix event code length field (at pos 1, after the 2-byte opcode) */
     pkt[1] = pos - 2;
 
-    /* Write as HCI Event (H4 type 0x04) */
     ble_sniffer_pcap_write_packet(0x04, pkt, pos);
+    if (btsnoop_recording) ble_sniffer_btsnoop_write_packet(0x04, pkt, pos);
+
+    /* Ring buffer */
+    int idx = pkt_ring_head;
+    pkt_record_t *rec = &pkt_ring[idx];
+    memcpy(rec->bda, param->scan_rst.bda, 6);
+    rec->rssi = param->scan_rst.rssi;
+    extract_name(param->scan_rst.ble_adv, param->scan_rst.adv_data_len, rec->name, sizeof(rec->name));
+    rec->data_len = (pos > PKT_DATA_MAX) ? PKT_DATA_MAX : pos;
+    memcpy(rec->data, pkt, rec->data_len);
+    pkt_ring_head = (idx + 1) % PKT_RING_SIZE;
+    if (pkt_ring_count < PKT_RING_SIZE) pkt_ring_count++;
     packet_count++;
 }
 
@@ -121,9 +153,8 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
 {
     switch (event) {
     case ESP_GAP_BLE_SCAN_RESULT_EVT:
-        if (param->scan_rst.search_evt == ESP_GAP_SEARCH_INQ_RES_EVT) {
+        if (param->scan_rst.search_evt == ESP_GAP_SEARCH_INQ_RES_EVT)
             send_advertising_report(param);
-        }
         break;
     case ESP_GAP_BLE_SCAN_START_COMPLETE_EVT:
         if (param->scan_start_cmpl.status == ESP_BT_STATUS_SUCCESS) {
@@ -140,26 +171,19 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     }
 }
 
-/* ---- Shell command group ---- */
+/* ---- Shell commands ---- */
 
 static void ble_sniffer_cmd_scan(void)
 {
-    if (!bt_ready) {
-        printf("BT not ready\n");
-        return;
-    }
-    if (scanning) {
-        printf("Already scanning\n");
-        return;
-    }
+    if (!bt_ready) { printf("BT not ready\n"); return; }
+    if (scanning) { printf("Already scanning\n"); return; }
     esp_ble_gap_start_scanning(0);
+    printf("Scan started\n");
 }
 
 static void ble_sniffer_cmd_stop_scan(void)
 {
-    if (scanning) {
-        esp_ble_gap_stop_scanning();
-    }
+    if (scanning) { esp_ble_gap_stop_scanning(); printf("Scan stopped\n"); }
 }
 
 static void ble_sniffer_cmd_status(void)
@@ -170,13 +194,69 @@ static void ble_sniffer_cmd_status(void)
     printf("Packets: %lu\n", (unsigned long)packet_count);
 }
 
+static void ble_sniffer_cmd_list(int argc, void *argv)
+{
+    int n = (argc >= 1) ? atoi((const char *)argv) : pkt_ring_count;
+    if (n > pkt_ring_count) n = pkt_ring_count;
+    printf("Recent %d packets:\n", n);
+    int start = (pkt_ring_head - n + PKT_RING_SIZE) % PKT_RING_SIZE;
+    int c = 0;
+    for (int i = 0; i < pkt_ring_count && c < n; i++) {
+        int idx = (start + i) % PKT_RING_SIZE;
+        pkt_record_t *rec = &pkt_ring[idx];
+        printf("  [%d] %02x:%02x:%02x:%02x:%02x:%02x  RSSI:%d  %s\n",
+               c, rec->bda[0], rec->bda[1], rec->bda[2],
+               rec->bda[3], rec->bda[4], rec->bda[5],
+               rec->rssi, rec->name[0] ? rec->name : "(no name)");
+        c++;
+    }
+}
+
+static void ble_sniffer_cmd_clear(void)
+{
+    pkt_ring_count = 0; pkt_ring_head = 0; packet_count = 0;
+    printf("Cleared\n");
+}
+
+static void ble_sniffer_cmd_record(void)
+{
+    if (btsnoop_recording) { printf("Already recording\n"); return; }
+    if (!bt_ready) { printf("BT not ready\n"); return; }
+    char path[64];
+    snprintf(path, sizeof(path), "%s/capture.btsnoop", FAT_BASE);
+    btsnoop_file = fopen(path, "wb");
+    if (!btsnoop_file) {
+        printf("Failed to open %s (FAT mounted?)\n", path);
+        return;
+    }
+    ble_sniffer_btsnoop_init(btsnoop_file_writer);
+    btsnoop_recording = true;
+    printf("Recording to %s\n", path);
+}
+
+static void ble_sniffer_cmd_stoprec(void)
+{
+    if (!btsnoop_recording) { printf("Not recording\n"); return; }
+    btsnoop_recording = false;
+    if (btsnoop_file) { fclose(btsnoop_file); btsnoop_file = NULL; }
+    printf("Recording stopped\n");
+}
+
 static ShellCommand ble_sniffer_group[] = {
     SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, scan, ble_sniffer_cmd_scan,
-        scan\r\nble_sniff scan - start capture),
+        scan\r\nstart capture),
     SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, stop, ble_sniffer_cmd_stop_scan,
-        stop\r\nble_sniff stop - stop capture),
+        stop\r\nstop capture),
     SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, status, ble_sniffer_cmd_status,
-        status\r\nble_sniff status - show status),
+        status\r\nshow status),
+    SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, list, ble_sniffer_cmd_list,
+        list\r\nlist recent packets),
+    SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, clear, ble_sniffer_cmd_clear,
+        clear\r\nclear counters),
+    SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, record, ble_sniffer_cmd_record,
+        record\r\nrecord btsnoop to FAT),
+    SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, stoprec, ble_sniffer_cmd_stoprec,
+        stoprec\r\nstop btsnoop recording),
     SHELL_CMD_GROUP_END()
 };
 SHELL_EXPORT_CMD_GROUP(
@@ -212,23 +292,18 @@ static void btn_toggle_cb(lv_event_t *e)
 static void ble_sniffer_update_cb(lv_timer_t *timer)
 {
     (void)timer;
-    if (!screen) return;
+    if (!screen || !count_label || !status_label) return;
 
-    gui_lock();
-    if (packet_count != display_count) {
-        display_count = packet_count;
-        if (count_label) {
-            lv_label_set_text_fmt(count_label, "Packets: %lu", (unsigned long)packet_count);
-        }
+    uint32_t cnt = packet_count;
+    if (cnt != display_count) {
+        display_count = cnt;
+        lv_label_set_text_fmt(count_label, "Packets: %lu", (unsigned long)cnt);
     }
-    if (status_label) {
-        lv_label_set_text(status_label, scanning ? "Sniffing..." : "Paused");
-    }
+    lv_label_set_text(status_label, scanning ? "Sniffing..." : "Paused");
     if (btn_toggle) {
         lv_obj_t *l = lv_obj_get_child(btn_toggle, 0);
         if (l) lv_label_set_text(l, scanning ? "Stop" : "Scan");
     }
-    gui_unlock();
 }
 
 static void ble_sniffer_init_screen(void)
@@ -267,14 +342,10 @@ static RtAppErr ble_sniffer_init_app(void)
         ESP_LOGE(TAG, "BT init failed: %s", esp_err_to_name(ret));
         return RTAM_OK;
     }
-
     ble_sniffer_pcap_init(pcap_output_cb);
     esp_ble_gap_register_callback(gap_event_handler);
-
-    /* Auto-start continuous scan */
     esp_ble_gap_start_scanning(0);
     scanning = true;
-
     bt_ready = true;
     ESP_LOGI(TAG, "Sniffer started");
     return RTAM_OK;
@@ -282,10 +353,7 @@ static RtAppErr ble_sniffer_init_app(void)
 
 static RtAppErr ble_sniffer_deinit_app(void)
 {
-    if (scanning) {
-        esp_ble_gap_stop_scanning();
-        scanning = false;
-    }
+    if (scanning) { esp_ble_gap_stop_scanning(); scanning = false; }
     bt_ready = false;
     bt_manager_deinit();
     return RTAM_OK;
@@ -301,20 +369,15 @@ static RtAppErr ble_sniffer_resume(void)
 
 static RtAppErr ble_sniffer_suspend(void)
 {
-    if (scanning) {
-        esp_ble_gap_stop_scanning();
-        scanning = false;
-    }
-    if (sniffer_timer) {
-        lv_timer_del(sniffer_timer);
-        sniffer_timer = NULL;
-    }
+    if (scanning) { esp_ble_gap_stop_scanning(); scanning = false; }
+    if (sniffer_timer) { lv_timer_del(sniffer_timer); sniffer_timer = NULL; }
     gui_remove_global_gesture_callback(ble_sniffer_gesture_callback);
     launcher_go_home(LV_SCR_LOAD_ANIM_MOVE_RIGHT, true);
     screen = NULL;
     status_label = NULL;
     count_label = NULL;
     btn_toggle = NULL;
+    display_count = 0;
     return RTAM_OK;
 }
 
@@ -326,21 +389,11 @@ static const RtAppInterface interface = {
 };
 
 static const RtAppDependencies dependencies = {
-    .required = (const char *[]) {
-        "gui",
-        "launcher",
-        NULL
-    },
-    .conflicted = (const char *[]) {
-        "ble_remote",
-        NULL
-    },
+    .required = (const char *[]) { "gui", "launcher", NULL },
+    .conflicted = (const char *[]) { "ble_remote", NULL },
 };
 
 extern const lv_image_dsc_t icon_app_ble_sniffer;
-static const RtamInfo ble_sniffer_info = {
-    .label = "BLE Sniff",
-    .icon  = (void *) GUI_APP_ICON(ble_sniffer),
-};
+static const RtamInfo ble_sniffer_info = { .label = "BLE Sniff", .icon = (void *) GUI_APP_ICON(ble_sniffer) };
 
 RTAPP_EXPORT(ble_sniff, &interface, RTAPP_FLAG_BACKGROUND, &dependencies, &ble_sniffer_info);
