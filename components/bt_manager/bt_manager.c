@@ -156,3 +156,8 @@ bool bt_manager_is_ble_ready(void)
 {
     return bt_initialized;
 }
+
+bool bt_manager_is_sniffer_mode(void)
+{
+    return bt_initialized && bt_sniffer_mode;
+}

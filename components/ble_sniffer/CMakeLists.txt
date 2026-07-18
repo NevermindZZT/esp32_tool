@@ -1,5 +1,8 @@
 idf_component_register(
     SRCS "ble_sniffer.c"
+         "ble_sniffer_hci.c"
+         "ble_sniffer_vs.c"
+         "ble_sniffer_ll.c"
          "ble_sniffer_pcap.c"
          "ble_sniffer_btsnoop.c"
          "icon_app_ble_sniffer.c"

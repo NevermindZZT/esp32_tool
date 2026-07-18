@@ -59,6 +59,12 @@ int bt_manager_get_ref(void);
  */
 bool bt_manager_is_ble_ready(void);
 
+/**
+ * @brief Check if current mode is sniffer (controller-only without Bluedroid).
+ * @return true if sniffer mode
+ */
+bool bt_manager_is_sniffer_mode(void);
+
 #ifdef __cplusplus
 }
 #endif
