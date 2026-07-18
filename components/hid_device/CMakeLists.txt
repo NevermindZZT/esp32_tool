@@ -11,7 +11,7 @@ idf_component_register(
 
     REQUIRES
         bt
-        driver
+        esp_driver_gpio
 )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-unused-const-variable)

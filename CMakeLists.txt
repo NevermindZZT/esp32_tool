@@ -2,6 +2,11 @@
 # CMakeLists in this exact order for cmake to work correctly
 cmake_minimum_required(VERSION 3.16)
 
+# Required for CMake >= 4.0 with cross-compilation toolchain:
+# skip linker test during compiler ABI detection (picolibc sysroot is
+# configured later by ESP-IDF's project.cmake)
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(esp32-tool VERSION 0.0.1)
 

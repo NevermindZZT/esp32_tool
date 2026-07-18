@@ -12,10 +12,12 @@ idf_component_register(
                  "../rtam/rtam/src"
 
     REQUIRES
-        driver
+        esp_driver_uart
+        esp_driver_gpio
 
     LDFRAGMENTS "letter-shell/demo/esp-idf/shell.lf"
 )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -DSHELL_CFG_USER="shell_cfg_user.h")
+target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-error=incompatible-pointer-types -Wno-error=cast-function-type)
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u rtAppshell")

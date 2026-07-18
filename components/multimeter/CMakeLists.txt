@@ -8,7 +8,7 @@ idf_component_register(
         "./"
 
     REQUIRES
-        driver
+        esp_driver_gpio
         rtam
         shell
         lvgl

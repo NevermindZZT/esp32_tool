@@ -30,7 +30,7 @@
 #include "shell.h"
 #include "shell_cmd_group.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/ledc_periph.h"
+#include "hal/ledc_periph.h"
 #include "stdlib/lv_sprintf.h"
 #include "widgets/label/lv_label.h"
 #include "widgets/slider/lv_slider.h"

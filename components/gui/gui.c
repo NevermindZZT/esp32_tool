@@ -12,7 +12,6 @@
 #include "esp_lcd_backlight.h"
 #include "esp_log.h"
 #include "font/binfont_loader/lv_binfont_loader.h"
-#include "freertos/projdefs.h"
 #include "indev/lv_indev.h"
 #include "misc/lv_area.h"
 #include "misc/lv_style_gen.h"
@@ -25,6 +24,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "esp_system.h"
+#include "esp_timer.h"
 #include "freertos/task.h"
 #include "lvgl.h"
 #include "lvgl_helpers.h"

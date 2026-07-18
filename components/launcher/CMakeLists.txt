@@ -11,7 +11,7 @@ idf_component_register(
                  "../rtam/rtam/src"
 
     REQUIRES
-        driver
+        esp_driver_gpio
         lvgl
         rtam
         gui

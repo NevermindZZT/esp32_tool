@@ -7,12 +7,11 @@ idf_component_register(
                  "../shell/letter-shell/src"
 
     REQUIRES
-        driver
         esp_partition
         esp_tinyusb
+        esp_usb_cdc_rom_console
         rtam
         vfs
-        esp_vfs_console
         storage
 )
 

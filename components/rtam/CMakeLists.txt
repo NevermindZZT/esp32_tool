@@ -8,7 +8,7 @@ idf_component_register(
                  "../shell/letter-shell/src"
 
     REQUIRES
-        driver
+        esp_driver_gpio
 
     LDFRAGMENTS "rtam.lf"
 )

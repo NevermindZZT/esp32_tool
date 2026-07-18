@@ -6,7 +6,7 @@ idf_component_register(
     INCLUDE_DIRS "./"
 
     REQUIRES
-        driver
+        esp_driver_gpio
         vfs
         lvgl
         lvgl_esp32_drivers

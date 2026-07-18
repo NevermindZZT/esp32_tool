@@ -5,3 +5,5 @@ build/
 managed_components/
 build.log
 components/templates/
+AGENTS.md
+.clangd

@@ -12,7 +12,7 @@ idf_component_register(
                  "../rtam/rtam/src"
 
     REQUIRES
-        driver
+        esp_driver_gpio
         spi_flash
         esp_hw_support
         lvgl
