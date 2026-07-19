@@ -288,10 +288,8 @@ static void ble_sniffer_cmd_vsdisable(void)
     printf("VS test mode disabled\n");
 }
 
-static void ble_sniffer_cmd_scanchan(int argc, void *argv)
+static void ble_sniffer_cmd_scanchan(int ch)
 {
-    if (argc < 1) { printf("Usage: ble_sniff scanchan <ch>\n"); return; }
-    uint8_t ch = atoi((const char *)argv);
     if (ch != 37 && ch != 38 && ch != 39) {
         printf("Only advertising channels 37/38/39 supported\n");
         return;
@@ -321,7 +319,7 @@ static ShellCommand ble_sniffer_group[] = {
         stop\r\nstop capture),
     SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, status, ble_sniffer_cmd_status,
         status\r\nshow status & mode),
-    SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, list, ble_sniffer_cmd_list,
+    SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_MAIN, list, ble_sniffer_cmd_list,
         list [n]\r\nlist recent n packets),
     SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, clear, ble_sniffer_cmd_clear,
         clear\r\nclear counters),
@@ -574,4 +572,4 @@ static const RtAppDependencies dependencies = {
 extern const lv_image_dsc_t icon_app_ble_sniffer;
 static const RtamInfo ble_sniffer_info = { .label = "BLE Sniff", .icon = (void *) GUI_APP_ICON(ble_sniffer) };
 
-RTAPP_EXPORT(ble_sniff, &interface, RTAPP_FLAG_BACKGROUND, &dependencies, &ble_sniffer_info);
+RTAPP_EXPORT(ble_sniff, &interface, 0, &dependencies, &ble_sniffer_info);

@@ -70,13 +70,22 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
 {
     switch (event) {
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
+    case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
         esp_ble_gap_start_advertising(&adv_params);
-        advert_running = true;
-        ESP_LOGI(TAG, "Advertising started");
+        printf("Starting advertising...\n");
+        break;
+    case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
+        if (param->adv_start_cmpl.status == ESP_BT_STATUS_SUCCESS) {
+            advert_running = true;
+            printf("Advertising started\n");
+        } else {
+            printf("Advertising start failed: status=%d\n",
+                   param->adv_start_cmpl.status);
+        }
         break;
     case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
         advert_running = false;
-        ESP_LOGI(TAG, "Advertising stopped");
+        printf("Advertising stopped\n");
         break;
     default:
         break;
@@ -178,14 +187,8 @@ static void ble_advert_cmd_stop(void)
     printf("Stopping advertising...\n");
 }
 
-static void ble_advert_cmd_data(int argc, void *argv)
+static void ble_advert_cmd_data(char *arg)
 {
-    if (argc < 1) {
-        printf("Usage: ble_advert data <hex> or ble_advert data clear\n");
-        return;
-    }
-
-    const char *arg = (const char *)argv;
     if (strcmp(arg, "clear") == 0) {
         adv_data_len = 0;
         memset(adv_data_buf, 0, sizeof(adv_data_buf));
@@ -206,13 +209,8 @@ static void ble_advert_cmd_data(int argc, void *argv)
     printf("\n");
 }
 
-static void ble_advert_cmd_name(int argc, void *argv)
+static void ble_advert_cmd_name(char *name)
 {
-    if (argc < 1) {
-        printf("Usage: ble_advert name <name>\n");
-        return;
-    }
-    const char *name = (const char *)argv;
     int name_len = strlen(name);
     if (name_len > 28) name_len = 28;
 
@@ -224,38 +222,64 @@ static void ble_advert_cmd_name(int argc, void *argv)
     printf("Set device name: %s\n", name);
 }
 
-static void ble_advert_cmd_interval(int argc, void *argv)
+static void ble_advert_cmd_interval(int min, int max)
 {
-    if (argc < 2) {
-        printf("Usage: ble_advert interval <min> <max>\n");
-        printf("  units: 0.625ms, typical: 32(20ms) 160(100ms) 320(200ms)\n");
-        return;
-    }
-    adv_params.adv_int_min = atoi((const char *)argv);
-    adv_params.adv_int_max = atoi((const char *)(argv + sizeof(void *)));
+    adv_params.adv_int_min = min;
+    adv_params.adv_int_max = max;
     printf("Set interval: min=%d max=%d (x0.625ms)\n",
            adv_params.adv_int_min, adv_params.adv_int_max);
 }
 
-static void ble_advert_cmd_type(int argc, void *argv)
+static void ble_advert_cmd_mf(char *company_id_str, char *data_str)
 {
-    if (argc < 1) {
-        printf("Usage: ble_advert type <type>\n");
-        printf("  0=ADV_IND (connectable scannable)\n");
-        printf("  1=ADV_NONCONN_IND (non-connectable)\n");
-        printf("  2=ADV_SCAN_IND (scannable)\n");
+    uint8_t company_id[2];
+    uint8_t data_buf[28];
+
+    int id_len = hex_str_to_bytes(company_id_str, company_id, 2);
+    if (id_len != 2) {
+        printf("Invalid company ID, must be 2 bytes (4 hex chars)\n");
         return;
     }
-    int t = atoi((const char *)argv);
-    switch (t) {
+
+    int data_len = hex_str_to_bytes(data_str, data_buf, 28);
+    if (data_len < 0) {
+        printf("Invalid data hex string\n");
+        return;
+    }
+
+    /* Build AD structure: len(1) + type(1) + company_id(2) + data(N) */
+    int total = 2 + 2 + data_len;
+    if (total > 31) {
+        printf("Total AD too long (%d bytes, max 31)\n", total);
+        return;
+    }
+
+    adv_data_buf[0] = 1 + 2 + data_len;  /* type + company_id + data */
+    adv_data_buf[1] = 0xFF;              /* AD type: Manufacturer Specific */
+    adv_data_buf[2] = company_id[0];     /* Company ID (little-endian) */
+    adv_data_buf[3] = company_id[1];
+    if (data_len > 0) {
+        memcpy(&adv_data_buf[4], data_buf, data_len);
+    }
+    adv_data_len = total;
+
+    printf("Set manufacturer data: company=0x%02x%02x, data=",
+           company_id[1], company_id[0]);
+    for (int i = 0; i < data_len; i++) printf("%02x", data_buf[i]);
+    printf(" (%d bytes total)\n", adv_data_len);
+}
+
+static void ble_advert_cmd_type(int type)
+{
+    switch (type) {
     case 0: adv_params.adv_type = ADV_TYPE_IND; break;
     case 1: adv_params.adv_type = ADV_TYPE_NONCONN_IND; break;
     case 2: adv_params.adv_type = ADV_TYPE_SCAN_IND; break;
     default:
-        printf("Invalid type\n");
+        printf("Invalid type, use 0=ADV_IND, 1=ADV_NONCONN_IND, 2=ADV_SCAN_IND\n");
         return;
     }
-    printf("Set adv type: %d\n", t);
+    printf("Set adv type: %d\n", type);
 }
 
 static void ble_advert_show(void)
@@ -289,14 +313,16 @@ static ShellCommand ble_advert_group[] = {
         start\r\nble_advert start - start BLE advertising),
     SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, stop, ble_advert_cmd_stop,
         stop\r\nble_advert stop - stop BLE advertising),
-    SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, data, ble_advert_cmd_data,
-        data\r\nble_advert data <hex|clear> - set/clear adv data),
-    SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, name, ble_advert_cmd_name,
-        name\r\nble_advert name <name> - set device name),
-    SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, interval, ble_advert_cmd_interval,
-        interval\r\nble_advert interval <min> <max> - set adv interval),
-    SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, type, ble_advert_cmd_type,
-        type\r\nble_advert type <0|1|2> - set adv type),
+    SHELL_CMD_GROUP_ITEM_SIGN(SHELL_TYPE_CMD_FUNC, data, ble_advert_cmd_data,
+        data\r\nble_advert data <hex|clear> - set/clear adv data, s),
+    SHELL_CMD_GROUP_ITEM_SIGN(SHELL_TYPE_CMD_FUNC, name, ble_advert_cmd_name,
+        name\r\nble_advert name <name> - set device name, s),
+    SHELL_CMD_GROUP_ITEM_SIGN(SHELL_TYPE_CMD_FUNC, interval, ble_advert_cmd_interval,
+        interval\r\nble_advert interval <min> <max> - set adv interval, ii),
+    SHELL_CMD_GROUP_ITEM_SIGN(SHELL_TYPE_CMD_FUNC, type, ble_advert_cmd_type,
+        type\r\nble_advert type <0|1|2> - set adv type, i),
+    SHELL_CMD_GROUP_ITEM_SIGN(SHELL_TYPE_CMD_FUNC, mf, ble_advert_cmd_mf,
+        mf\r\nble_advert mf <company_id_hex> <data_hex> - set mfr data, ss),
     SHELL_CMD_GROUP_ITEM(SHELL_TYPE_CMD_FUNC, show, ble_advert_show,
         show\r\nble_advert show - show current config),
     SHELL_CMD_GROUP_END()

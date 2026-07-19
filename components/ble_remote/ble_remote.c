@@ -190,13 +190,8 @@ static void ble_remote_cmd_start(void)
     ESP_LOGI(TAG, "BLE Remote started");
 }
 
-static void ble_remote_cmd_send(int argc, void *argv)
+static void ble_remote_cmd_send(int key)
 {
-    if (argc < 1) {
-        printf("Usage: ble_remote send <key>\n");
-        return;
-    }
-    uint8_t key = atoi((const char *)argv);
     ble_remote_send_key(key);
 }
 

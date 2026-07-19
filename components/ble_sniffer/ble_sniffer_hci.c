@@ -353,6 +353,9 @@ void hci_deinit(void)
         vTaskDelay(pdMS_TO_TICKS(30));
     }
 
+    /* 清除 VHCI 回调，防止后续 Bluedroid 初始化后被拦截 HCI 事件 */
+    esp_vhci_host_register_callback(NULL);
+
     /* Stop processing task */
     if (hci_task_handle) {
         vTaskDelete(hci_task_handle);
