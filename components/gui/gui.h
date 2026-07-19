@@ -47,6 +47,18 @@ lv_obj_t *gui_create_status_bar(lv_obj_t *parent, bool show_time, char *content)
 
 lv_obj_t *gui_create_slider(lv_obj_t *parent, lv_palette_t palette, int32_t radius);
 
+/**
+ * @brief Create a Material Design style rounded button.
+ * @param parent Parent object
+ * @param text Button label text
+ * @param cb Click event callback
+ * @param bg_color Background color (e.g. lv_color_hex(0x1976D2))
+ * @param width Button width (0 = auto half-screen)
+ * @return Button object
+ */
+lv_obj_t *gui_create_md_button(lv_obj_t *parent, const char *text,
+                                lv_event_cb_t cb, lv_color_t bg_color, int32_t width);
+
 void gui_fs_init(void);
 
 #endif // __GUI_H__

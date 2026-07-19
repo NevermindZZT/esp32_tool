@@ -254,3 +254,26 @@ lv_obj_t *gui_create_slider(lv_obj_t *parent, lv_palette_t palette, int32_t radi
 
     return slider;
 }
+
+lv_obj_t *gui_create_md_button(lv_obj_t *parent, const char *text,
+                                lv_event_cb_t cb, lv_color_t bg_color, int32_t width)
+{
+    if (width <= 0) {
+        width = (LV_HOR_RES - 16 * 2 - 12) / 2;  /* default half-screen with margin */
+    }
+    lv_obj_t *btn = lv_button_create(parent);
+    lv_obj_set_size(btn, width, 48);
+    lv_obj_set_style_radius(btn, 20, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(btn, bg_color, LV_PART_MAIN);
+    lv_obj_set_style_shadow_width(btn, 0, LV_PART_MAIN);
+    lv_obj_set_style_border_width(btn, 0, LV_PART_MAIN);
+    lv_obj_add_event_cb(btn, cb, LV_EVENT_CLICKED, NULL);
+
+    lv_obj_t *lbl = lv_label_create(btn);
+    lv_label_set_text(lbl, text);
+    lv_obj_center(lbl);
+    lv_obj_set_style_text_color(lbl, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+    lv_obj_set_style_text_font(lbl, &lv_font_montserrat_16, LV_PART_MAIN);
+
+    return btn;
+}

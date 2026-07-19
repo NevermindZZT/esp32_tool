@@ -92,12 +92,12 @@ static uint32_t lv_get_tick_cb(void)
 
 BaseType_t gui_lock(void)
 {
-    return xSemaphoreTake(xGuiSemaphore, portMAX_DELAY);
+    return xSemaphoreTakeRecursive(xGuiSemaphore, portMAX_DELAY);
 }
 
 void gui_unlock(void)
 {
-    xSemaphoreGive(xGuiSemaphore);
+    xSemaphoreGiveRecursive(xGuiSemaphore);
 }
 
 void gui_push_screen(lv_obj_t *screen, lv_screen_load_anim_t anim_type)
@@ -160,7 +160,7 @@ static void gui_init_font(void)
 
 static void gui_task(void *param)
 {
-    xGuiSemaphore = xSemaphoreCreateMutex();
+    xGuiSemaphore = xSemaphoreCreateRecursiveMutex();
     touch_calibration_t cal_data = {16, 258, 1, 278};
     
     lv_init();

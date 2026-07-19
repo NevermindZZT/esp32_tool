@@ -45,6 +45,7 @@
 static const char *TAG = "ble_sniffer";
 
 static volatile bool scanning = false;
+static volatile bool sniffer_active = false;
 
 static lv_obj_t *screen = NULL;
 static lv_obj_t *status_label = NULL;
@@ -393,7 +394,13 @@ static void btn_record_cb(lv_event_t *e)
 static void ble_sniffer_update_cb(lv_timer_t *timer)
 {
     (void)timer;
-    if (!screen || !count_label || !status_label) return;
+    if (!sniffer_active) return;
+
+    gui_lock();
+    if (!screen || !count_label || !status_label) {
+        gui_unlock();
+        return;
+    }
 
     uint32_t cnt = hci_get_packet_count();
     if (cnt != display_count) {
@@ -402,51 +409,72 @@ static void ble_sniffer_update_cb(lv_timer_t *timer)
     }
     if (btsnoop_recording) {
         lv_label_set_text(status_label, "Sniffing + REC");
+        /* Record button text */
+        if (btn_record) {
+            lv_obj_t *r = lv_obj_get_child(btn_record, 0);
+            if (r) lv_label_set_text(r, "Stop Rec");
+            lv_obj_set_style_bg_color(btn_record, lv_color_hex(0xD32F2F), LV_PART_MAIN);
+        }
     } else {
         lv_label_set_text(status_label, scanning ? "Sniffing..." : "Paused");
+        if (btn_record) {
+            lv_obj_t *r = lv_obj_get_child(btn_record, 0);
+            if (r) lv_label_set_text(r, "Record");
+            lv_obj_set_style_bg_color(btn_record, lv_color_hex(0x388E3C), LV_PART_MAIN);
+        }
     }
     if (btn_toggle) {
         lv_obj_t *l = lv_obj_get_child(btn_toggle, 0);
-        if (l) lv_label_set_text(l, scanning ? "Stop" : "Scan");
+        if (l) {
+            lv_label_set_text(l, scanning ? "Stop" : "Scan");
+        }
+        lv_obj_set_style_bg_color(btn_toggle,
+            scanning ? lv_color_hex(0xD32F2F) : lv_color_hex(0x1976D2),
+            LV_PART_MAIN);
     }
-    if (btn_record) {
-        lv_obj_t *r = lv_obj_get_child(btn_record, 0);
-        if (r) lv_label_set_text(r, btsnoop_recording ? "Stop Rec" : "Record");
-    }
+    gui_unlock();
 }
+
+/* ---- Material Design style helpers ---- */
+
+#define MD_MARGIN       16
+#define MD_GAP          12
 
 static void ble_sniffer_init_screen(void)
 {
     if (screen) return;
-    screen = lv_obj_create(NULL);
-    lv_obj_set_style_bg_color(screen, lv_color_hex(0x000000), LV_PART_MAIN);
 
+    /* Screen — dark background */
+    screen = lv_obj_create(NULL);
+    lv_obj_set_style_bg_color(screen, lv_color_hex(0x121212), LV_PART_MAIN);
+
+    /* Status bar — single line, top center */
     status_label = lv_label_create(screen);
     lv_label_set_text(status_label, "Ready");
-    lv_obj_align(status_label, LV_ALIGN_TOP_MID, 0, 10);
+    lv_obj_align(status_label, LV_ALIGN_TOP_MID, 0, 22);
     lv_obj_set_style_text_color(status_label, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+    lv_obj_set_style_text_font(status_label, &lv_font_montserrat_20, LV_PART_MAIN);
 
+    /* Packet count — big number in center area */
     count_label = lv_label_create(screen);
     lv_label_set_text_fmt(count_label, "Packets: 0");
     lv_obj_align(count_label, LV_ALIGN_CENTER, 0, -30);
-    lv_obj_set_style_text_color(count_label, lv_color_hex(0xAAAAAA), LV_PART_MAIN);
+    lv_obj_set_style_text_color(count_label, lv_color_hex(0xBBBBBB), LV_PART_MAIN);
+    lv_obj_set_style_text_font(count_label, &lv_font_montserrat_24, LV_PART_MAIN);
 
-    btn_toggle = lv_button_create(screen);
-    lv_obj_set_size(btn_toggle, 100, 40);
-    lv_obj_align(btn_toggle, LV_ALIGN_BOTTOM_LEFT, 10, -20);
-    lv_obj_add_event_cb(btn_toggle, btn_toggle_cb, LV_EVENT_CLICKED, NULL);
-    lv_obj_t *btn_label = lv_label_create(btn_toggle);
-    lv_label_set_text(btn_label, "Scan");
-    lv_obj_center(btn_label);
+    /* Bottom button row */
+    int32_t btn_w = (LV_HOR_RES - MD_MARGIN * 2 - MD_GAP) / 2;
 
-    btn_record = lv_button_create(screen);
-    lv_obj_set_size(btn_record, 100, 40);
-    lv_obj_align(btn_record, LV_ALIGN_BOTTOM_RIGHT, -10, -20);
-    lv_obj_add_event_cb(btn_record, btn_record_cb, LV_EVENT_CLICKED, NULL);
-    lv_obj_t *rec_label = lv_label_create(btn_record);
-    lv_label_set_text(rec_label, "Record");
-    lv_obj_center(rec_label);
+    btn_toggle = gui_create_md_button(screen, "Scan", btn_toggle_cb,
+                                       lv_color_hex(0x1976D2), btn_w);
+    lv_obj_align(btn_toggle, LV_ALIGN_BOTTOM_LEFT, MD_MARGIN, -MD_MARGIN);
 
+    btn_record = gui_create_md_button(screen, "Record", btn_record_cb,
+                                       lv_color_hex(0x388E3C), btn_w);
+    lv_obj_align(btn_record, LV_ALIGN_BOTTOM_RIGHT, -MD_MARGIN, -MD_MARGIN);
+
+    /* Timer for UI refresh */
+    sniffer_active = true;
     sniffer_timer = lv_timer_create(ble_sniffer_update_cb, 500, NULL);
 }
 
@@ -493,14 +521,6 @@ static RtAppErr ble_sniffer_deinit_app(void)
     return RTAM_OK;
 }
 
-static RtAppErr ble_sniffer_resume(void)
-{
-    ble_sniffer_init_screen();
-    gui_push_screen(screen, LV_SCR_LOAD_ANIM_FADE_IN);
-    gui_add_global_gesture_callback(ble_sniffer_gesture_callback);
-    return RTAM_OK;
-}
-
 static RtAppErr ble_sniffer_suspend(void)
 {
     if (scanning) {
@@ -511,15 +531,31 @@ static RtAppErr ble_sniffer_suspend(void)
         btsnoop_recording = false;
         if (btsnoop_file) { fclose(btsnoop_file); btsnoop_file = NULL; }
     }
-    if (sniffer_timer) { lv_timer_del(sniffer_timer); sniffer_timer = NULL; }
+
     gui_remove_global_gesture_callback(ble_sniffer_gesture_callback);
-    launcher_go_home(LV_SCR_LOAD_ANIM_MOVE_RIGHT, true);
+
+    /* 先置 flag 禁止定时器回调修改 UI。volatile 写是原子操作。
+     * 定时器回调在 LVGL 任务中运行，已持有 GUI 锁，
+     * 所以 suspend 中所有 LVGL 操作（launcher_go_home）也需要 gui_lock 保护。 */
+    sniffer_active = false;
     screen = NULL;
     status_label = NULL;
     count_label = NULL;
     btn_toggle = NULL;
     btn_record = NULL;
     display_count = 0;
+
+    gui_lock();
+    launcher_go_home(LV_SCR_LOAD_ANIM_MOVE_RIGHT, true);
+    gui_unlock();
+    return RTAM_OK;
+}
+
+static RtAppErr ble_sniffer_resume(void)
+{
+    ble_sniffer_init_screen();
+    gui_push_screen(screen, LV_SCR_LOAD_ANIM_FADE_IN);
+    gui_add_global_gesture_callback(ble_sniffer_gesture_callback);
     return RTAM_OK;
 }
 
